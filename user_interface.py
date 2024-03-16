@@ -1,7 +1,7 @@
 # UI for handwriting recognition
 
 """Modules to build a ui"""
-import tkinter
+# import tkinter
 import customtkinter
 
 # The following section sets the defaults for the window
@@ -60,6 +60,7 @@ progressbar.set(0.0)
 
 
 def button_callback():
+    """ text to get rid of error"""
     print(text_in_folder.get())
     progressbar.start()
 
