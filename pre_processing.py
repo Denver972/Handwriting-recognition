@@ -7,7 +7,7 @@
 # should allow for the format to be reconstructed after handwriting
 # recognition has been performed.
 
-class PreProcess():
+class PreProcess:
     """
     This class will include all the methods required to pre process an 
     image for handwriting recognition. Each method in the class should 
@@ -15,4 +15,13 @@ class PreProcess():
     """
 
     def __init__(self, file_path):
+        pass
+
+    def grey_image(self):
+        pass
+
+    def rotate_image(self):
+        pass
+
+    def blur_text(self):
         pass
