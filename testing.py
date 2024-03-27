@@ -2,6 +2,10 @@
 # import cv2
 # import numpy as np
 # import matplotlib.pyplot as plt
+"""
+Testing file
+"""
+
 from pre_processing import ImageRotation
 
 FILE = "Handwriting-recognition/temp/test_page.png"

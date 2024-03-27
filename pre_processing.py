@@ -7,7 +7,9 @@
 # should allow for the format to be reconstructed after handwriting
 # recognition has been performed.
 
-
+"""
+Need cv2 for image manipulation and numpy for the arrays
+"""
 import cv2
 import numpy as np
 
@@ -20,13 +22,19 @@ class PreProcess:
     """
 
     def __init__(self, file_path):
-        pass
+        """
+        remove error
+        """
 
     def grey_image(self):
-        pass
+        """
+        remove error
+        """
 
     def blur_text(self):
-        pass
+        """
+        remove error
+        """
 
     def rotate_image(self):
         """
@@ -37,7 +45,6 @@ class PreProcess:
         OUTPUT: orriginal image orriented correctly
         PATH 
         """
-        pass
 
 
 class ImageRotation():
@@ -78,11 +85,11 @@ class ImageRotation():
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
         # find largest contour
-        largestContour = contours[0]
-        minAreaRect = cv2.minAreaRect(largestContour)
+        largest_contour = contours[0]
+        min_area_rect = cv2.minAreaRect(largest_contour)
 
         # detect angle
-        angle = minAreaRect[-1]
+        angle = min_area_rect[-1]
 
         if angle < -45:
             angle = 90 + angle
@@ -92,11 +99,11 @@ class ImageRotation():
             return angle
 
         if show_images:
-            minAreaRectContour = np.int0(cv2.boxPoints(minAreaRect))
+            min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
             temp1 = cv2.drawContours(
                 image_copy.copy(), contours, -1, (255, 0, 0), 2)
             temp2 = cv2.drawContours(
-                image_copy.copy(), [minAreaRectContour], -1, (255, 0, 0), 2)
+                image_copy.copy(), [min_rect_contour], -1, (255, 0, 0), 2)
             cv2.namedWindow("Greyed imagage", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Blurred image", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Threeshold image", cv2.WINDOW_NORMAL)
@@ -125,4 +132,3 @@ class ImageRotation():
         """
         Returns the rotated image
         """
-        pass
