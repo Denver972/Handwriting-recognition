@@ -61,24 +61,25 @@ class ImageRotation():
         Returns the angle with which to rotate the image
         """
         image = np.array(cv2.imread(file, 1))
-
+        print(image.shape)
         # Make copy of orriginal image
         image_copy = image.copy()
-
+        print(image_copy.shape)
         # Convert image to greyscale
         image_grey = cv2.cvtColor(image_copy, cv2.COLOR_BGR2GRAY)
-
+        print(image_grey.shape)
         # Blur image
-        image_blur = cv2.GaussianBlur(image_grey, (9, 9), 0)
-
+        image_blur = cv2.GaussianBlur(
+            image_grey, ksize=(15, 15), sigmaX=10, sigmaY=10)
+        print(image_blur.shape)
         # Threshold
         image_thresh = cv2.threshold(
             image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-
+        print(image_thresh.shape)
         # dilate to merge lines or columns
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 5))
-        image_dilated = cv2.dilate(image_thresh, kernel, iterations=5)
-
+        image_dilated = cv2.dilate(image_thresh, kernel, iterations=2)
+        print(image_dilated.shape)
         # detect contours
         contours, hierarchy = cv2.findContours(
             image_dilated, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -106,7 +107,7 @@ class ImageRotation():
                 image_copy.copy(), [min_rect_contour], -1, (255, 0, 0), 2)
             cv2.namedWindow("Greyed imagage", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Blurred image", cv2.WINDOW_NORMAL)
-            cv2.namedWindow("Threeshold image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold image", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Dilated image", cv2.WINDOW_NORMAL)
             cv2.namedWindow("All Contours", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Largest Contour", cv2.WINDOW_NORMAL)
@@ -114,7 +115,7 @@ class ImageRotation():
             cv2.waitKey()
             cv2.imshow("Blurred image", image_blur)
             cv2.waitKey()
-            cv2.imshow("Threeshold image", image_thresh)
+            cv2.imshow("Threshold image", image_thresh)
             cv2.waitKey()
             cv2.imshow("Dilated image", image_dilated)
             cv2.waitKey()
