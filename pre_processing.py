@@ -12,6 +12,7 @@ Need cv2 for image manipulation and numpy for the arrays
 """
 import cv2
 import numpy as np
+from pypdf import PdfReader, PdfWriter
 
 
 class PreProcess:
@@ -133,3 +134,38 @@ class ImageRotation():
         """
         Returns the rotated image
         """
+
+
+class FileSeparation():
+    """
+    This class will separate a multi page PDF into individual PNG files 
+    to give to the PreProccess class. This should rename the files 
+    appropriately to perserve the order and structure
+
+    INPUT: PDF containing multiple pages
+    OUTPUT: Individual PNG files
+    """
+
+    def __init__(self):
+        self.file = None
+
+    def folder_creation(self):
+        """
+        Create a folder with name YYYY
+        """
+        pass
+
+    def file_split(self, file):
+        """
+        Splits the PDFs into single page PDFs
+        """
+        input_pdf = PdfReader(open(file, "rb"))
+        page = 0
+        total_pages = len(input_pdf.pages)
+        for pg in range(page, total_pages):
+            print(pg)
+            output_pdf = PdfWriter()
+            output_pdf.add_page(input_pdf.pages[pg])
+            output_file = f"Handwriting-recognition/testsplit/test{pg}.pdf"
+            with open(output_file, "wb") as output:
+                output_pdf.write(output)

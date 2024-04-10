@@ -154,3 +154,4 @@ cython_debug/
 # Specific files
 # testing.py
 temp
+testsplit

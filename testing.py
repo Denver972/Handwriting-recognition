@@ -5,11 +5,11 @@
 """
 Testing file
 """
-import numpy as np
-import cv2
-from pre_processing import ImageRotation
+# import numpy as np
+# import cv2
+from pre_processing import FileSeparation
 
-FILE = "Handwriting-recognition/temp/test_page3.png"
+FILE = "Handwriting-recognition/testsplit/MW1948.pdf"
 
 # image_color = np.array(cv2.imread(FILE, 1))
 # image_grey = cv2.cvtColor(image_color, cv2.COLOR_BGR2GRAY)
@@ -29,8 +29,11 @@ FILE = "Handwriting-recognition/temp/test_page3.png"
 # # # cv2.imshow("output", imS)
 # cv2.waitKey(0)
 
-image_test = ImageRotation()
+# image_test = ImageRotation()
 
 # image_test.skew_angle(file=FILE, show_images=True)
 
-print(image_test.skew_angle(file=FILE, show_images=True))
+# print(image_test.skew_angle(file=FILE, show_images=True))
+
+test_separation = FileSeparation()
+test_separation.file_split(file=FILE)
