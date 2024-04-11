@@ -6,3 +6,4 @@ pytorch
 opencv
 numpy
 pypdf
+os

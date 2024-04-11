@@ -7,7 +7,8 @@ Testing file
 """
 # import numpy as np
 # import cv2
-from pre_processing import FileSeparation
+from pre_processing import FileSeparation, ImageRotation
+# import fitz
 
 FILE = "Handwriting-recognition/testsplit/MW1948.pdf"
 
@@ -20,7 +21,7 @@ FILE = "Handwriting-recognition/testsplit/MW1948.pdf"
 # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 5))
 # image_dilated = cv2.dilate(image_thresh, kernel, iterations=5)
 
-# # print(image_color.shape)
+# print(image_color.shape)
 # # # imS = cv2.resize(image_color, (960, 540))
 # # # plt.imshow(image_color)
 # # # plt.show()
@@ -36,4 +37,6 @@ FILE = "Handwriting-recognition/testsplit/MW1948.pdf"
 # print(image_test.skew_angle(file=FILE, show_images=True))
 
 test_separation = FileSeparation()
+# test_separation.folder_creation()
 test_separation.file_split(file=FILE)
+test_separation.pdf_to_png(file=FILE)

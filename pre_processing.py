@@ -10,8 +10,10 @@
 """
 Need cv2 for image manipulation and numpy for the arrays
 """
+import os
 import cv2
 import numpy as np
+import fitz_old
 from pypdf import PdfReader, PdfWriter
 
 
@@ -140,7 +142,8 @@ class FileSeparation():
     """
     This class will separate a multi page PDF into individual PNG files 
     to give to the PreProccess class. This should rename the files 
-    appropriately to perserve the order and structure
+    appropriately to perserve the order and structure. Additionally two
+    directories will be created to store all the individual files
 
     INPUT: PDF containing multiple pages
     OUTPUT: Individual PNG files
@@ -151,13 +154,19 @@ class FileSeparation():
 
     def folder_creation(self):
         """
-        Create a folder with name YYYY
+        Create directories for both pdf file and png file
         """
-        pass
+        pdf_path = "./PDFFolder"
+        png_path = "./PNGFolder"
+
+        os.mkdir(pdf_path)
+        os.mkdir(png_path)
 
     def file_split(self, file):
         """
         Splits the PDFs into single page PDFs
+        Currently unnessecary as pdf_to_png will split the pdf into 
+        individual pages
         """
         input_pdf = PdfReader(open(file, "rb"))
         page = 0
@@ -166,6 +175,18 @@ class FileSeparation():
             print(pg)
             output_pdf = PdfWriter()
             output_pdf.add_page(input_pdf.pages[pg])
-            output_file = f"Handwriting-recognition/testsplit/test{pg}.pdf"
+            output_file = f"./PDFFolder/test{pg}.pdf"
             with open(output_file, "wb") as output:
                 output_pdf.write(output)
+
+# TODO: fix fitz_old
+    def pdf_to_png(self, file):
+        """
+        Convert pdf to multiple images
+        RGB format
+        """
+        input_pdf = fitz_old.open(file)
+        for page in input_pdf:
+            print(page)
+            pix = page.get_pixmap(dpi=300)
+            pix.save(f"./PNGFolder/test{page.number}.png")
