@@ -132,10 +132,21 @@ class ImageRotation():
 
         return angle
 
-    def rotate_image(self):
+    def rotate_image(self, file):
         """
         Returns the rotated image
         """
+        angle = self.skew_angle(file)
+        image_new = np.array(cv2.imread(file, 1))
+        image_grey = cv2.cvtColor(image_new, cv2.COLOR_BGR2GRAY)
+        (h, w) = image_grey.shape[:2]
+        centre = (w//2, h//2)
+        M = cv2.getRotationMatrix2D(centre, angle, 1.0)
+        image_new = cv2.warpAffine(image_grey, M, (w, h),
+                                   flags=cv2.INTER_CUBIC,
+                                   borderMode=cv2.BORDER_REPLICATE)
+        image_save = cv2.imwrite(file, image_new)
+        return image_new
 
 
 class FileSeparation():
