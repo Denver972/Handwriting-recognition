@@ -201,3 +201,106 @@ class FileSeparation():
             print(page)
             pix = page.get_pixmap(dpi=300)
             pix.save(f"./PNGFolder/test{page.number}.png")
+
+
+class TableDetect():
+    """
+    Determine the number of columns and rows in the image
+    Input: rotated, greyed image
+    Output: number of rows
+            number of columns
+    """
+
+    def __init__(self):
+        self.file = None
+
+    def remove_lines(self, file, show_images: bool = False):
+        """
+        Input: Grey image
+        Output: Image with table lines removed
+        """
+        image = np.array(cv2.imread(file, 0))
+        image_copy = image.copy()
+        image_thresh = cv2.threshold(
+            image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # Remove horizontal lines
+        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (80, 1))
+        remove_horizontal = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, horizontal_kernel, iterations=1)
+        cnts = cv2.findContours(
+            remove_horizontal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        for c in cnts:
+            cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+        # Remove vertical lines
+        vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
+        remove_vertical = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
+        cnts = cv2.findContours(
+            remove_vertical, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        for c in cnts:
+            cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+
+        if show_images:
+            cv2.imshow('thresh', image_thresh)
+            cv2.imshow('result', image_copy)
+            cv2.imwrite('result.png', image_copy)
+            cv2.waitKey()
+
+    def rows(self, file, show_images: bool = False):
+        """
+        Extract the rows from the table. Idea is to elongate the text in
+        x direction to make row a continuous block and then use contours
+        to count how many blocks there are
+        """
+        image = np.array(cv2.imread(file, 0))
+        image_thresh = cv2.threshold(
+            image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # horizontal_blur = cv2.GaussianBlur(image, ksize=(15, 15), sigmaX=10,
+        #                                    sigmaY=10)
+        # instead want to dilate
+        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 1))
+        image_dilated = cv2.dilate(
+            image_thresh, horizontal_kernel, iterations=4)
+        # make contours
+
+        if show_images:
+            cv2.namedWindow("Horizontal Blur", cv2.WINDOW_NORMAL)
+            cv2.imshow("Horizontal Blur", image_dilated)
+            cv2.waitKey()
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        # return nrows
+
+    def columns(self):
+        """
+        Same concept as above except stretch in the y dimension 
+        """
+        # return ncols
+
+    def dimensions(self):
+        """
+        Combine the rows and columns to give the dimensions of the table
+        This will then be used when indexing the cells 
+        """
+        dims = np.array([self.rows, self.columns], dtype=int)
+
+        return dims
+
+
+class WordExtraction():
+    """
+    Extract the whole "cell" or words within the cell
+    """
+
+
+class CharacterExtraction():
+    """
+    Extract the characters from the image, resize them to make them 
+    uniform, save them as individual images
+    """
+
+    def __init__(self):
+        pass

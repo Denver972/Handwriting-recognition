@@ -7,10 +7,10 @@ Testing file
 """
 # import numpy as np
 # import cv2
-from pre_processing import FileSeparation, ImageRotation
+from pre_processing import FileSeparation, ImageRotation, TableDetect
 # import fitz
 
-FILE = "Handwriting-recognition/temp/test_page.png"
+FILE = "result.png"
 
 # image_color = np.array(cv2.imread(FILE, 1))
 # image_grey = cv2.cvtColor(image_color, cv2.COLOR_BGR2GRAY)
@@ -31,15 +31,20 @@ FILE = "Handwriting-recognition/temp/test_page.png"
 # cv2.waitKey(0)
 
 
-image_test = ImageRotation()
+# image_test = ImageRotation()
 
 # image_test.skew_angle(file=FILE, show_images=True)
 # for ix in range(0, 59):
 #     file_temp = f"./PNGFolder/test{ix}.png"
 #     print(image_test.skew_angle(file=file_temp, show_images=False))
-image_test.rotate_image(file=FILE)
+# print(image_test.skew_angle(file=FILE))
+# image_test.rotate_image(file=FILE)
 
 # test_separation = FileSeparation()
 # # test_separation.folder_creation()
 # test_separation.file_split(file=FILE)
 # test_separation.pdf_to_png(file=FILE)
+
+table = TableDetect()
+# table.remove_lines(file=FILE)
+table.rows(file=FILE, show_images=True)
