@@ -155,3 +155,4 @@ cython_debug/
 # testing.py
 temp
 testsplit
+test_cont_extract

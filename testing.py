@@ -7,7 +7,7 @@ Testing file
 """
 # import numpy as np
 # import cv2
-from pre_processing import FileSeparation, ImageRotation, TableDetect
+from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction
 # import fitz
 
 FILE = "result.png"
@@ -45,6 +45,10 @@ FILE = "result.png"
 # test_separation.file_split(file=FILE)
 # test_separation.pdf_to_png(file=FILE)
 
-table = TableDetect()
-# table.remove_lines(file=FILE)
-table.rows(file=FILE, show_images=True)
+# table = TableDetect()
+# table.remove_lines(file=FILE, show_images=True)
+# table.rows(file="result.png", show_images=True)
+
+words = WordExtraction()
+words.cell_locate(file=FILE, show_images=True)
+# words.extraction(file=FILE)

@@ -221,8 +221,10 @@ class TableDetect():
         """
         image = np.array(cv2.imread(file, 0))
         image_copy = image.copy()
+        image_blur = cv2.GaussianBlur(image, ksize=(5, 5), sigmaX=10,
+                                      sigmaY=10)
         image_thresh = cv2.threshold(
-            image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         # Remove horizontal lines
         horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (80, 1))
         remove_horizontal = cv2.morphologyEx(
@@ -243,8 +245,10 @@ class TableDetect():
             cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
 
         if show_images:
-            cv2.imshow('thresh', image_thresh)
-            cv2.imshow('result', image_copy)
+            cv2.namedWindow("Threshold", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
+            cv2.imshow('Threshold', image_thresh)
+            cv2.imshow('Result', image_copy)
             cv2.imwrite('result.png', image_copy)
             cv2.waitKey()
 
@@ -290,16 +294,111 @@ class TableDetect():
         return dims
 
 
+class LineExtraction():
+    """
+    Extract the lines of the text
+    """
+
+
 class WordExtraction():
     """
     Extract the whole "cell" or words within the cell
+    INPUT: Pre-processed image
     """
+
+    def __init__(self):
+        self.file = None
+
+    def cell_locate(self, file, show_images: bool = False):
+        """
+        Finds the contours around each cell
+        INPUT: Pre-processed image
+        OUTPUT: Countours of the cells
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(file, 0))
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(5, 5), sigmaX=10,
+                                      sigmaY=10)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 5))
+        image_dilate = cv2.dilate(image_thresh, kernel, iterations=2)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros([len(contours)], dtype=int)
+        y = np.zeros([len(contours)], dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros([len(contours)], dtype=int)
+        h = np.zeros([len(contours)], dtype=int)
+        print(len(contours))
+        print(x.shape)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+        # print(contours[1])
+        # largest_contour = contours[0]
+        # rect_cont = np.empty(shape=(len(contours), 4), dtype=int)
+        # min_rect_contour = np.empty(shape=(len(contours), 4), dtype=int)
+        # for ix, cont in enumerate(contours):
+        #     # rect_cont[ix] = cv2.minAreaRect(cont)
+        #     min_rect_contour[ix] = np.int0(cv2.boxPoints(cont))
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                if cv2.contourArea(cont) > 500:
+                    temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                          (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return boundary
+
+    def extraction(self, file):
+        """
+        INPUT: Rectangle dims [lower x, lower y, height, width]
+        OUTPUT: Individual images of the detected words
+        """
+        image = np.array(cv2.imread(file, 0))
+        boundary = self.cell_locate(file)
+        # sort the boundaries by row
+        boundary = sorted(boundary, key=lambda x: x[1])
+        # boundary.sort()
+
+        print(boundary)
+        for ix, bound in enumerate(boundary):
+            rect = image[bound[1]:bound[1] +
+                         bound[2], bound[0]:bound[0]+bound[3]]
+            cv2.imwrite(f"test_cont_extract/word{ix}.png", rect)
 
 
 class CharacterExtraction():
     """
     Extract the characters from the image, resize them to make them 
     uniform, save them as individual images
+    INPUT: Pre-processed image
     """
 
     def __init__(self):
