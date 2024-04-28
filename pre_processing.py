@@ -19,8 +19,8 @@ from pypdf import PdfReader, PdfWriter
 
 class PreProcess:
     """
-    This class will include all the methods required to pre process an 
-    image for handwriting recognition. Each method in the class should 
+    This class will include all the methods required to pre process an
+    image for handwriting recognition. Each method in the class should
     be called in order to identify where the characters are.
     """
 
@@ -42,17 +42,17 @@ class PreProcess:
     def rotate_image(self):
         """
         Takes the blurred image and will compute the angle to rotate the
-        image by and then rotate the image outputting a new image that 
+        image by and then rotate the image outputting a new image that
         will be orriented correctly.
         INPUT: Greyed, blurrred image
         OUTPUT: orriginal image orriented correctly
-        PATH 
+        PATH
         """
 
 
 class ImageRotation():
     """
-    Method to rotate the image 
+    Method to rotate the image
     """
 
     def __init__(self):
@@ -151,8 +151,8 @@ class ImageRotation():
 
 class FileSeparation():
     """
-    This class will separate a multi page PDF into individual PNG files 
-    to give to the PreProccess class. This should rename the files 
+    This class will separate a multi page PDF into individual PNG files
+    to give to the PreProccess class. This should rename the files
     appropriately to perserve the order and structure. Additionally two
     directories will be created to store all the individual files
 
@@ -176,7 +176,7 @@ class FileSeparation():
     def file_split(self, file):
         """
         Splits the PDFs into single page PDFs
-        Currently unnessecary as pdf_to_png will split the pdf into 
+        Currently unnessecary as pdf_to_png will split the pdf into
         individual pages
         """
         input_pdf = PdfReader(open(file, "rb"))
@@ -280,14 +280,14 @@ class TableDetect():
 
     def columns(self):
         """
-        Same concept as above except stretch in the y dimension 
+        Same concept as above except stretch in the y dimension
         """
         # return ncols
 
     def dimensions(self):
         """
         Combine the rows and columns to give the dimensions of the table
-        This will then be used when indexing the cells 
+        This will then be used when indexing the cells
         """
         dims = np.array([self.rows, self.columns], dtype=int)
 
@@ -297,6 +297,13 @@ class TableDetect():
 class LineExtraction():
     """
     Extract the lines of the text
+    """
+
+
+class ColumnExtraction():
+    """
+    Extract the columns of the tables. Use the Time column as a guide for
+    tables vertical size, then use headers as horizontal boundary locaters
     """
 
 
@@ -319,13 +326,13 @@ class WordExtraction():
         image = np.array(cv2.imread(file, 0))
         image_copy = image.copy()
         image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
-        image_blur = cv2.GaussianBlur(image, ksize=(5, 5), sigmaX=10,
-                                      sigmaY=10)
+        image_blur = cv2.GaussianBlur(image, ksize=(9, 9), sigmaX=50,
+                                      sigmaY=50)
         image_thresh = cv2.threshold(
             image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         # step 2 is to dilate the text to merge characters together
         # want a balance between under dilation and over dilation
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 5))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 3))
         image_dilate = cv2.dilate(image_thresh, kernel, iterations=2)
 
         # step 3 is to find contours
@@ -334,11 +341,11 @@ class WordExtraction():
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
         # Assume there is no rotation in the image as it is already corrected
         # lower left coordinates of bounding rectangle
-        x = np.zeros([len(contours)], dtype=int)
-        y = np.zeros([len(contours)], dtype=int)
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
         # width and height of the bounding rectangle
-        w = np.zeros([len(contours)], dtype=int)
-        h = np.zeros([len(contours)], dtype=int)
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
         print(len(contours))
         print(x.shape)
         # Loop through all contours to get the bounding boxes
@@ -384,8 +391,14 @@ class WordExtraction():
         image = np.array(cv2.imread(file, 0))
         boundary = self.cell_locate(file)
         # sort the boundaries by row
-        boundary = sorted(boundary, key=lambda x: x[1])
+        # boundary = sorted(boundary, key=lambda x: x[1])
         # boundary.sort()
+        # sort boundary by distance from the origin
+        print(boundary.shape)
+        boundary = np.stack(boundary)
+        print(boundary.shape)
+        boundary = sorted(
+            boundary, key=lambda x: np.sqrt(x[0]*x[0] + x[1]*x[1]))
 
         print(boundary)
         for ix, bound in enumerate(boundary):
@@ -396,7 +409,7 @@ class WordExtraction():
 
 class CharacterExtraction():
     """
-    Extract the characters from the image, resize them to make them 
+    Extract the characters from the image, resize them to make them
     uniform, save them as individual images
     INPUT: Pre-processed image
     """

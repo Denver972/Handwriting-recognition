@@ -11,6 +11,7 @@ from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtra
 # import fitz
 
 FILE = "result.png"
+# FILE = "Handwriting-recognition/temp/grid2_test.png"
 
 # image_color = np.array(cv2.imread(FILE, 1))
 # image_grey = cv2.cvtColor(image_color, cv2.COLOR_BGR2GRAY)
@@ -51,4 +52,4 @@ FILE = "result.png"
 
 words = WordExtraction()
 words.cell_locate(file=FILE, show_images=True)
-# words.extraction(file=FILE)
+words.extraction(file=FILE)
