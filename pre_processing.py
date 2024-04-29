@@ -306,6 +306,95 @@ class ColumnExtraction():
     tables vertical size, then use headers as horizontal boundary locaters
     """
 
+    def __init__(self):
+        self.file = None
+
+    def col_locate(self, file, show_images: bool = False):
+        """
+        Find the contours for columns to prepare them for extraction
+        INPUT: Pre-processed image
+        OUTPUT: Contours off the columns sorted left to right
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(file, 0))
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(9, 9), sigmaX=50,
+                                      sigmaY=50)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        # This is for no lines and 6 iterations
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (60, 10))
+        # with lines in the table
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
+        image_dilate = cv2.dilate(image_thresh, kernel, iterations=1)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
+        print(len(contours))
+        print(x.shape)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                if cv2.contourArea(cont) > 500:
+                    temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                          (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return boundary
+
+    def extraction(self, file):
+        """
+        INPUT: Rectangle dims [lower x, lower y, height, width]
+        OUTPUT: Individual images of the detected words
+        """
+        image = np.array(cv2.imread(file, 0))
+        boundary = self.col_locate(file)
+        # sort the boundaries by row
+        # boundary = sorted(boundary, key=lambda x: x[1])
+        # boundary.sort()
+        # sort boundary by distance from the origin
+        print(boundary.shape)
+        boundary = np.stack(boundary)
+        print(boundary.shape)
+        boundary = sorted(
+            boundary, key=lambda x: np.sqrt(x[0]*x[0] + x[1]*x[1]))
+
+        print(boundary)
+        for ix, bound in enumerate(boundary):
+            rect = image[bound[1]:bound[1] +
+                         bound[2], bound[0]:bound[0]+bound[3]]
+            cv2.imwrite(f"test_cont_extract/word{ix}.png", rect)
+
 
 class WordExtraction():
     """
@@ -416,3 +505,106 @@ class CharacterExtraction():
 
     def __init__(self):
         pass
+
+
+class TableExtraction():
+    """
+    Extract the columns of the tables. Use the Time column as a guide for
+    tables vertical size, then use headers as horizontal boundary locaters
+    """
+
+    def __init__(self):
+        self.file = None
+
+    def table_locate(self, file, show_images: bool = False):
+        """
+        Find the contours for columns to prepare them for extraction
+        WILL NOT WORK FOR TYPED DATA
+        INPUT: Pre-processed image
+        OUTPUT: Contours off the columns sorted left to right
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(file, 0))
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(9, 9), sigmaX=50,
+                                      sigmaY=50)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        # This is for no lines and 6 iterations
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (60, 10))
+        # with lines in the table
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
+        image_dilate = cv2.dilate(image_thresh, kernel, iterations=1)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
+        print(len(contours))
+        print(x.shape)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                if cv2.contourArea(cont) > 500:
+                    temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                          (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return boundary
+
+    def extraction(self, file):
+        """
+        INPUT: Rectangle dims [lower x, lower y, height, width]
+        OUTPUT: Table area (Largest found contour)
+        """
+        image = np.array(cv2.imread(file, 0))
+        boundary = self.table_locate(file)
+        # sort the boundaries by row
+        # boundary = sorted(boundary, key=lambda x: x[1])
+        # boundary.sort()
+        # sort boundary by distance from the origin
+        # print(boundary.shape)
+        boundary = np.stack(boundary)
+        # print(boundary.shape)
+        # Sort by area and reverse to get the largest indexed first
+        boundary = sorted(
+            boundary, key=lambda x: x[3]*x[2], reverse=True)
+        # only want largest boundary as this should be the table
+        # print(boundary)
+        table_boundary = boundary[0]
+        rectangle = image[table_boundary[1]:table_boundary[1]+table_boundary[2],
+                          table_boundary[0]:table_boundary[0]+table_boundary[3]]
+        cv2.imwrite("test_cont_extract/Table.png", rectangle)
+
+        # for ix, bound in enumerate(boundary):
+        #     rect = image[bound[1]:bound[1] +
+        #                  bound[2], bound[0]:bound[0]+bound[3]]
+        #     cv2.imwrite(f"test_cont_extract/word{ix}.png", rect)

@@ -7,10 +7,10 @@ Testing file
 """
 # import numpy as np
 # import cv2
-from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction
+from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction
 # import fitz
 
-FILE = "result.png"
+FILE = "Handwriting-recognition/temp/test_page.png"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
 
 # image_color = np.array(cv2.imread(FILE, 1))
@@ -50,6 +50,9 @@ FILE = "result.png"
 # table.remove_lines(file=FILE, show_images=True)
 # table.rows(file="result.png", show_images=True)
 
-words = WordExtraction()
-words.cell_locate(file=FILE, show_images=True)
-words.extraction(file=FILE)
+# words = WordExtraction()
+# words.cell_locate(file=FILE, show_images=True)
+# words.extraction(file=FILE)
+table = TableExtraction()
+table.table_locate(file=FILE, show_images=True)
+table.extraction(file=FILE)
