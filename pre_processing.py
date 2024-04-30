@@ -214,7 +214,7 @@ class TableDetect():
     def __init__(self):
         self.file = None
 
-    def remove_lines(self, file, show_images: bool = False):
+    def remove_lines(self, file, fileOut, show_images: bool = False):
         """
         Input: Grey image
         Output: Image with table lines removed
@@ -226,30 +226,31 @@ class TableDetect():
         image_thresh = cv2.threshold(
             image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         # Remove horizontal lines
-        # horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (80, 1))
-        # remove_horizontal = cv2.morphologyEx(
-        #     image_thresh, cv2.MORPH_OPEN, horizontal_kernel, iterations=1)
-        # cnts = cv2.findContours(
-        #     remove_horizontal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-        # for c in cnts:
-        #     cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
-        # Remove vertical lines
-        vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
-        remove_vertical = cv2.morphologyEx(
-            image_thresh, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
+        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (80, 1))
+        remove_horizontal = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, horizontal_kernel, iterations=1)
         cnts = cv2.findContours(
-            remove_vertical, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            remove_horizontal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnts = cnts[0] if len(cnts) == 2 else cnts[1]
         for c in cnts:
             cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+        # Remove vertical lines
+        # vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
+        # remove_vertical = cv2.morphologyEx(
+        #     image_thresh, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
+        # cnts = cv2.findContours(
+        #     remove_vertical, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        # for c in cnts:
+        #     cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+
+        cv2.imwrite(fileOut, image_copy)
 
         if show_images:
             cv2.namedWindow("Threshold", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
             cv2.imshow('Threshold', image_thresh)
             cv2.imshow('Result', image_copy)
-            cv2.imwrite('result.png', image_copy)
             cv2.waitKey()
 
     def rows(self, file, show_images: bool = False):
@@ -321,8 +322,8 @@ class RowExtraction():
         # step 2 is to dilate the text to merge characters together
         # want a balance between under dilation and over dilation
         # This is for no lines and 6 iterations
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 2))
-        image_dilate = cv2.dilate(image_thresh, kernel, iterations=1)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 1))
+        image_dilate = cv2.dilate(image_thresh, kernel, iterations=10)
 
         # step 3 is to find contours
         contours, hierarchy = cv2.findContours(
@@ -364,6 +365,31 @@ class RowExtraction():
             cv2.destroyAllWindows()
             cv2.waitKey(1)
         return boundary
+
+    def extraction(self, fileIn, fileOut):
+        """
+        INPUT: Rectangle dims [lower x, lower y, height, width]
+               Image with no lines removed
+        OUTPUT: Individual images of the detected words
+        """
+        image = np.array(cv2.imread(fileIn, 0))
+        boundary = self.row_locate(fileIn)
+        # sort the boundaries by row
+        # boundary = sorted(boundary, key=lambda x: x[1])
+        # boundary.sort()
+        # sort boundary by distance from top
+        # print(boundary.shape)
+        boundary = np.stack(boundary)
+        # print(boundary.shape)
+        boundary = sorted(
+            boundary, key=lambda x: x[1])
+
+        # print(boundary)
+        for ix, bound in enumerate(boundary):
+            rect = image[bound[1]:bound[1] +
+                         bound[2], bound[0]:bound[0]+bound[3]]
+            place = os.path.join(fileOut, f"row{ix}.png")
+            cv2.imwrite(place, rect)
 
 
 class ColumnExtraction():
@@ -436,13 +462,14 @@ class ColumnExtraction():
             cv2.waitKey(1)
         return boundary
 
-    def extraction(self, file):
+    def extraction(self, fileIn, fileOut):
         """
         INPUT: Rectangle dims [lower x, lower y, height, width]
+               Image with no lines removed
         OUTPUT: Individual images of the detected words
         """
-        image = np.array(cv2.imread(file, 0))
-        boundary = self.col_locate(file)
+        image = np.array(cv2.imread(fileOut, 0))
+        boundary = self.col_locate(fileIn)
         # sort the boundaries by row
         # boundary = sorted(boundary, key=lambda x: x[1])
         # boundary.sort()
@@ -568,7 +595,7 @@ class CharacterExtraction():
     """
 
     def __init__(self):
-        pass
+        self.file = None
 
 
 class TableExtraction():

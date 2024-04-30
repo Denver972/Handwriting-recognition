@@ -7,10 +7,11 @@ Testing file
 """
 # import numpy as np
 # import cv2
+import os
 from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction
 # import fitz
 
-FILE = "test_cont_extract/column1.png"
+FILE = ".png"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
 
 # image_color = np.array(cv2.imread(FILE, 1))
@@ -60,7 +61,24 @@ FILE = "test_cont_extract/column1.png"
 
 # column = ColumnExtraction()
 # column.col_locate(file="result.png", show_images=True)
-# column.extraction(file="result.png")
+# column.extraction(fileIn="NoVertLines.png", fileOut="Table.png")
 
-row = RowExtraction()
-row.row_locate(file=FILE, show_images=True)
+# row = RowExtraction()
+# row.row_locate(file=FILE, show_images=True)
+
+for col in range(0, 11):
+    file = f"./test_cont_extract/column{col}.png"  # all lines included
+    fileOutCol = f"./column{col}.png"  # no horizontal lines
+    print(file)
+    # remove horizontal lines and place new image in fileOutCol
+    table = TableDetect()
+    table.remove_lines(file=file, fileOut=fileOutCol)
+    # loop through each fileOutCol and extract rows to their own folder
+    # called COLUMN{ix}
+    col_folder = f"COLUMN{col}"
+    os.mkdir(col_folder)
+    for r in range(0, 41):
+        fileOutRow = f"./COLUMN{col}"
+        row = RowExtraction()
+        # row.row_locate(file=fileOutCol, show_images=True)
+        row.extraction(fileIn=fileOutCol, fileOut=fileOutRow)
