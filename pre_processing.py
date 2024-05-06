@@ -17,37 +17,228 @@ import fitz_old
 from pypdf import PdfReader, PdfWriter
 
 
-class PreProcess:
+class PreProcess():
     """
     This class will include all the methods required to pre process an
     image for handwriting recognition. Each method in the class should
     be called in order to identify where the characters are.
     """
 
-    def __init__(self, file_path):
+    def __init__(self, file, year):
         """
-        remove error
+        Chosen kernels for dilation/erosion for spliting the image for 
+        character recognition
+        file: Multipage PDF
+        year: year of data
         """
+        self.file = file
+        self.year = year
+        self.rotate_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 5))
+        self.table_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 20))
+        self.horizontal_kernel = cv2.getStructuringElement(
+            cv2.MORPH_RECT, (80, 1))
+        self.vertical_kernel = cv2.getStructuringElement(
+            cv2.MORPH_RECT, (1, 100))
+        self.col_kernel = None
+        self.row_kernel = None
+        self.char_kernel = None
 
-    def grey_image(self):
+    def construct(self):
         """
-        remove error
+        Goal is to create folder structure that is easily loopable through
+        with structure page->column->row->order. this will need to detect the 
+        pages in the pdf and then for now, the number of columns, rows and 
+        characters will be detected automatically in further parts
+        INPUT: Multi page tabular pdf
+        OUTPUT: Folder structure and
         """
+        # Step 1: Create the higher level folders
+        png_path = "./PNGFolder"
+        year_path = f"./Year_{self.year}"
+        os.mkdir(png_path)
+        os.mkdir(year_path)
+        input_pdf = fitz_old.open(self.file)
+        # Step 2: Split the pdf into individual pages and apply the
+        #         pre-processing steps to each page at spliting time
+        for page in input_pdf:
+            print(page)
+            pix = page.get_pixmap(dpi=300)
+            pix.save(f"./PNGFolder/Sheet{page.number}.png")
+            page_path = f"./Year_{self.year}/Sheet{page.number}"
+            os.mkdir(page_path)
+            # Save the rotated image in the page path with name Rotated_sheet
+            rotated_path = os.path.join(page_path, "Rotated_sheet.png")
+            cv2.imwrite(rotated_path,
+                        self.rotate_image(path=f"./PNGFolder/Sheet{page.number}.png", show_images=False))
+            # Extract and save the table part
+            table_path = os.path.join(page_path, "Table.png")
+            cv2.imwrite(table_path, self.table_locate(path=rotated_path))
+            # Save an image with no vertical lines, no horizontal lines and
+            # neither lines (three images in total)
+            no_hori_path = os.path.join(page_path, "No_horizontal_lines.png")
+            no_vert_path = os.path.join(page_path, "No_vertical_lines.png")
+            no_line_path = os.path.join(page_path, "No_lines_path.png")
 
-    def blur_text(self):
+    def rotate_image(self, path, show_images: bool = False):
         """
-        remove error
-        """
-
-    def rotate_image(self):
-        """
-        Takes the blurred image and will compute the angle to rotate the
+        Takes the image and will compute the angle to rotate the
         image by and then rotate the image outputting a new image that
         will be orriented correctly.
-        INPUT: Greyed, blurrred image
-        OUTPUT: orriginal image orriented correctly
-        PATH
+        INPUT: image path
+        OUTPUT:image orriented correctly
         """
+        # read in the image, accepts rgb images
+        image = np.array(cv2.imread(path, 1))
+        # print(image.shape)
+        # Make copy of orriginal image
+        image_copy = image.copy()
+        # print(image_copy.shape)
+        # Convert image to greyscale
+        image_grey = cv2.cvtColor(image_copy, cv2.COLOR_BGR2GRAY)
+        # print(image_grey.shape)
+        # Blur image
+        image_blur = cv2.GaussianBlur(
+            image_grey, ksize=(15, 15), sigmaX=10, sigmaY=10)
+        # print(image_blur.shape)
+        # Threshold
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # print(image_thresh.shape)
+        # dilate to merge lines or columns
+        image_dilated = cv2.dilate(
+            image_thresh, self.rotate_kernel, iterations=2)
+        # print(image_dilated.shape)
+        # detect contours
+        contours, hierarchy = cv2.findContours(
+            image_dilated, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+        # find largest contour
+        largest_contour = contours[0]
+        min_area_rect = cv2.minAreaRect(largest_contour)
+
+        # detect angle
+        angle = min_area_rect[-1]
+
+        if angle < -45:
+            angle = 90 + angle
+            return -1.0 * angle
+        elif angle > 45:
+            angle = 90 - angle
+            return angle
+
+        (h, w) = image_grey.shape[:2]
+        centre = (w//2, h//2)
+        rotation_matrix = cv2.getRotationMatrix2D(centre, angle, 1.0)
+        image_new = cv2.warpAffine(image_grey, rotation_matrix, (w, h),
+                                   flags=cv2.INTER_CUBIC,
+                                   borderMode=cv2.BORDER_REPLICATE)
+        # save image
+        # cv2.imwrite("Rotated_sheet.png", image_new)
+
+        if show_images:
+            min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            temp1 = cv2.drawContours(
+                image_copy.copy(), contours, -1, (255, 0, 0), 2)
+            temp2 = cv2.drawContours(
+                image_copy.copy(), [min_rect_contour], -1, (255, 0, 0), 2)
+            cv2.namedWindow("Greyed imagage", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("All Contours", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Largest Contour", cv2.WINDOW_NORMAL)
+            cv2.imshow("Greyed imagage", image_grey)
+            cv2.waitKey()
+            cv2.imshow("Blurred image", image_blur)
+            cv2.waitKey()
+            cv2.imshow("Threshold image", image_thresh)
+            cv2.waitKey()
+            cv2.imshow("Dilated image", image_dilated)
+            cv2.waitKey()
+            cv2.imshow("All Contours", temp1)
+            cv2.waitKey()
+            cv2.imshow("Largest Contour", temp2)
+            cv2.waitKey()
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+
+        return image_new
+
+    def table_locate(self, path, show_images: bool = False):
+        """
+        Find the contours for columns to prepare them for extraction
+        WILL NOT WORK FOR TYPED DATA
+        INPUT: Rotated image
+        OUTPUT: Rectangular contour containing the table
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(9, 9), sigmaX=50,
+                                      sigmaY=50)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        # This is for no lines and 6 iterations
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (60, 10))
+        # with lines in the table
+        image_dilate = cv2.dilate(
+            image_thresh, self.table_kernel, iterations=1)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+        boundary = np.stack(boundary)
+        # print(boundary.shape)
+        # Sort by area and reverse to get the largest indexed first
+        boundary = sorted(
+            boundary, key=lambda x: x[3]*x[2], reverse=True)
+        # only want largest boundary as this should be the table
+        # print(boundary)
+        table_boundary = boundary[0]
+        rectangle = image[table_boundary[1]:table_boundary[1]+table_boundary[2],
+                          table_boundary[0]:table_boundary[0]+table_boundary[3]]
+        # cv2.imwrite("test_cont_extract/Table.png", rectangle)
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                if cv2.contourArea(cont) > 500:
+                    temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                          (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return rectangle
 
 
 class ImageRotation():
@@ -178,6 +369,7 @@ class FileSeparation():
         Splits the PDFs into single page PDFs
         Currently unnessecary as pdf_to_png will split the pdf into
         individual pages
+        DEPRECIATED
         """
         input_pdf = PdfReader(open(file, "rb"))
         page = 0
@@ -190,7 +382,7 @@ class FileSeparation():
             with open(output_file, "wb") as output:
                 output_pdf.write(output)
 
-# TODO: fix fitz_old
+    # TODO: fix fitz_old
     def pdf_to_png(self, file):
         """
         Convert pdf to multiple images
@@ -597,6 +789,95 @@ class CharacterExtraction():
     def __init__(self):
         self.file = None
 
+    def char_locate(self, file, show_images: bool = False):
+        """
+        Finds the contours around each cell
+        INPUT: Pre-processed image
+        OUTPUT: Countours of the cells
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(file, 0))
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(3, 3), sigmaX=5,
+                                      sigmaY=5)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 5))
+        # image_dilate = cv2.erode(image_thresh, kernel, iterations=1)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
+        print(len(contours))
+        print(x.shape)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+        # print(contours[1])
+        # largest_contour = contours[0]
+        # rect_cont = np.empty(shape=(len(contours), 4), dtype=int)
+        # min_rect_contour = np.empty(shape=(len(contours), 4), dtype=int)
+        # for ix, cont in enumerate(contours):
+        #     # rect_cont[ix] = cv2.minAreaRect(cont)
+        #     min_rect_contour[ix] = np.int0(cv2.boxPoints(cont))
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                      (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            # cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            # cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return boundary
+
+    def extraction(self, file):
+        """
+        INPUT: Rectangle dims [lower x, lower y, height, width]
+        OUTPUT: Individual images of the detected words
+        """
+        image = np.array(cv2.imread(file, 0))
+        boundary = self.char_locate(file)
+        # sort the boundaries by row
+        # boundary = sorted(boundary, key=lambda x: x[1])
+        # boundary.sort()
+        # sort boundary by distance from the origin
+        print(boundary.shape)
+        boundary = np.stack(boundary)
+        print(boundary.shape)
+        boundary = sorted(
+            boundary, key=lambda x: x[0])
+
+        print(boundary)
+        for ix, bound in enumerate(boundary):
+            rect = image[bound[1]:bound[1] +
+                         bound[2], bound[0]:bound[0]+bound[3]]
+            cv2.imwrite(f"test_cont_extract/word{ix}.png", rect)
+
 
 class TableExtraction():
     """
@@ -699,3 +980,35 @@ class TableExtraction():
         #     rect = image[bound[1]:bound[1] +
         #                  bound[2], bound[0]:bound[0]+bound[3]]
         #     cv2.imwrite(f"test_cont_extract/word{ix}.png", rect)
+
+
+class FileConstructor():
+    """
+    Create the folder structure to store the images and split the pdf 
+    into individual images for each page
+    """
+
+    def __init__(self, file, year):
+        self.file = file
+        self.year = year
+
+    def construct(self):
+        """
+        Goal is to create folder structure that is easily loopable through
+        with structure page->column->row->order. this will need to detect the 
+        pages in the pdf and then for now, the number of columns, rows and 
+        characters will be detected automatically in further parts
+        INPUT: Multi page tabular pdf
+        OUTPUT: Folder structure and
+        """
+        png_path = "./PNGFolder"
+        pg_path = f"./Y{self.year}"
+        os.mkdir(png_path)
+        os.mkdir(pg_path)
+        input_pdf = fitz_old.open(self.file)
+        for page in input_pdf:
+            print(page)
+            pix = page.get_pixmap(dpi=300)
+            pix.save(f"./PNGFolder/Sheet{page.number}.png")
+            page_path = f"./Y{self.year}/P{page.number}"
+            os.mkdir(page_path)

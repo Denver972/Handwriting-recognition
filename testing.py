@@ -8,10 +8,10 @@ Testing file
 # import numpy as np
 # import cv2
 import os
-from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction
+from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
 # import fitz
 
-FILE = ".png"
+FILE = "MW1959.pdf"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
 
 # image_color = np.array(cv2.imread(FILE, 1))
@@ -66,19 +66,31 @@ FILE = ".png"
 # row = RowExtraction()
 # row.row_locate(file=FILE, show_images=True)
 
-for col in range(0, 11):
-    file = f"./test_cont_extract/column{col}.png"  # all lines included
-    fileOutCol = f"./column{col}.png"  # no horizontal lines
-    print(file)
-    # remove horizontal lines and place new image in fileOutCol
-    table = TableDetect()
-    table.remove_lines(file=file, fileOut=fileOutCol)
-    # loop through each fileOutCol and extract rows to their own folder
-    # called COLUMN{ix}
-    col_folder = f"COLUMN{col}"
-    os.mkdir(col_folder)
-    for r in range(0, 41):
-        fileOutRow = f"./COLUMN{col}"
-        row = RowExtraction()
-        # row.row_locate(file=fileOutCol, show_images=True)
-        row.extraction(fileIn=fileOutCol, fileOut=fileOutRow)
+# Below for loop extracts rows from columns
+# for col in range(0, 11):
+#     file = f"./test_cont_extract/column{col}.png"  # all lines included
+#     fileOutCol = f"./column{col}.png"  # no horizontal lines
+#     print(file)
+#     # remove horizontal lines and place new image in fileOutCol
+#     table = TableDetect()
+#     table.remove_lines(file=file, fileOut=fileOutCol)
+#     # loop through each fileOutCol and extract rows to their own folder
+#     # called COLUMN{ix}
+#     col_folder = f"COLUMN{col}"
+#     os.mkdir(col_folder)
+#     for r in range(0, 41):
+#         fileOutRow = f"./COLUMN{col}"
+#         row = RowExtraction()
+#         # row.row_locate(file=fileOutCol, show_images=True)
+#         row.extraction(fileIn=fileOutCol, fileOut=fileOutRow)
+
+# # Character extraction
+# for row in range(0, 41):
+#     char = CharacterExtraction()
+#     file = f"COLUMN2/row{row}.png"
+#     char.char_locate(file=file, show_images=True)
+
+# Test split and file organisation
+
+test = PreProcess(file=FILE, year=1959)
+test.construct()
