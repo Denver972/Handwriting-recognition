@@ -39,8 +39,8 @@ class PreProcess():
             cv2.MORPH_RECT, (80, 1))
         self.vertical_kernel = cv2.getStructuringElement(
             cv2.MORPH_RECT, (1, 100))
-        self.col_kernel = None
-        self.row_kernel = None
+        self.col_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 50))
+        self.row_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 1))
         self.char_kernel = None
 
     def construct(self):
@@ -77,7 +77,53 @@ class PreProcess():
             # neither lines (three images in total)
             no_hori_path = os.path.join(page_path, "No_horizontal_lines.png")
             no_vert_path = os.path.join(page_path, "No_vertical_lines.png")
-            no_line_path = os.path.join(page_path, "No_lines_path.png")
+            no_line_path = os.path.join(page_path, "No_lines.png")
+
+            cv2.imwrite(no_hori_path, self.remove_hori_lines(table_path))
+            cv2.imwrite(no_vert_path, self.remove_vert_lines(table_path))
+            cv2.imwrite(no_line_path, self.remove_lines(table_path))
+
+            # Extract columns, use the image with no vertical lines as input
+            # and extract the found contours on the image that contains no
+            # horizontal lines and no lines
+            column_path = os.path.join(page_path, "Work")
+            os.mkdir(column_path)
+            col_no_lines_image = np.array(cv2.imread(no_line_path, 0))
+            col_extract_image = np.array(cv2.imread(no_hori_path, 0))
+            for ix, bound in enumerate(self.col_extract(path=no_vert_path)):
+                rect = col_extract_image[bound[1]:bound[1] +
+                                         bound[2], bound[0]:bound[0]+bound[3]]
+
+                rect_two = col_no_lines_image[bound[1]:bound[1] +
+                                              bound[2], bound[0]:bound[0]+bound[3]]
+                out_file = f"column{ix}.png"
+                col_no_line = f"col_no_line{ix}.png"
+                cv2.imwrite(os.path.join(column_path, out_file), rect)
+                cv2.imwrite(os.path.join(column_path, col_no_line), rect_two)
+
+                row_extract_input = os.path.join(column_path, out_file)
+                row_extract_image = np.array(cv2.imread(
+                    os.path.join(column_path, col_no_line), 0))
+                new_folder = f"ColumnFolder{ix}"
+                col_folder = os.path.join(page_path, new_folder)
+                os.mkdir(col_folder)
+                for jx, perim in enumerate(self.row_extract(path=row_extract_input)):
+                    cell = row_extract_image[perim[1]:perim[1] +
+                                             perim[2], perim[0]:perim[0]+perim[3]]
+                    result_file = f"row{jx}.png"
+                    row_result = os.path.join(col_folder, result_file)
+                    cv2.imwrite(row_result, cell)
+                    # set up character folder
+                    r_folder = f"RowFolder{jx}"
+                    row_folder = os.path.join(col_folder, r_folder)
+                    row_result_image = np.array(cv2.imread(row_result, 0))
+                    os.mkdir(row_folder)
+                    for kx, outside in enumerate(self.char_extract(path=row_result)):
+                        char = row_result_image[outside[1]:outside[1] +
+                                                outside[2], outside[0]:outside[0]+outside[3]]
+                        char_file = f"char{kx}.png"
+                        char_result = os.path.join(row_folder, char_file)
+                        cv2.imwrite(char_result, char)
 
     def rotate_image(self, path, show_images: bool = False):
         """
@@ -239,6 +285,295 @@ class PreProcess():
             cv2.destroyAllWindows()
             cv2.waitKey(1)
         return rectangle
+
+    def remove_vert_lines(self, path):
+        """
+        Removes vertical lines from the table providing distinct columns 
+        separated by whitespace. Identifies objects in the image that have 
+        the structure of a vertical line and replaces the pixel value with
+        that of a white pixel
+        Input: Table image
+        Oput: Table image with the vertical lines removed
+        """
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        image_blur = cv2.GaussianBlur(image, ksize=(5, 5), sigmaX=10,
+                                      sigmaY=10)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # Detect vertical lines
+        remove_vertical = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, self.vertical_kernel, iterations=1)
+        cnts = cv2.findContours(
+            remove_vertical, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        # Remove vertical lines
+        for c in cnts:
+            cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+
+        return image_copy
+
+    def remove_hori_lines(self, path):
+        """
+        Remove horizontal lines from the table
+        Input: Table image
+        Output: Image without horizontal lines
+        """
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        image_blur = cv2.GaussianBlur(image, ksize=(5, 5), sigmaX=10,
+                                      sigmaY=10)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # Identifyhorizontal lines
+        remove_horizontal = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, self.horizontal_kernel, iterations=1)
+        cnts = cv2.findContours(
+            remove_horizontal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        # remove contours
+        for c in cnts:
+            cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+
+        return image_copy
+
+    def remove_lines(self, path):
+        """
+        Input: Grey image
+        Output: Image with table lines removed
+        """
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        image_blur = cv2.GaussianBlur(image, ksize=(5, 5), sigmaX=10,
+                                      sigmaY=10)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # Remove horizontal lines
+        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (80, 1))
+        remove_horizontal = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, horizontal_kernel, iterations=1)
+        cnts = cv2.findContours(
+            remove_horizontal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        for c in cnts:
+            cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+        # Remove vertical lines
+        vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
+        remove_vertical = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
+        cnts = cv2.findContours(
+            remove_vertical, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        for c in cnts:
+            cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+
+        return image_copy
+
+    def col_extract(self, path, show_images: bool = False):
+        """
+        Find the contours for columns to prepare them for extraction
+        INPUT: Pre-processed image
+        OUTPUT: Contours off the columns sorted left to right
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(path, 0))
+        # colour image only to show green contours
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(9, 9), sigmaX=50,
+                                      sigmaY=50)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        # This is for no lines and 6 iterations
+        image_dilate = cv2.dilate(image_thresh, self.col_kernel, iterations=5)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
+        # print(len(contours))
+        # print(x.shape)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+
+        boundary = np.stack(boundary)
+
+        boundary = sorted(boundary, key=lambda x: x[0])
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                if cv2.contourArea(cont) > 500:
+                    temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                          (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return boundary
+
+    def row_extract(self, path, show_images: bool = False):
+        """
+        Finds the contours around each cell
+        INPUT: Pre-processed image
+        OUTPUT: Countours of the cells
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(9, 9), sigmaX=50,
+                                      sigmaY=50)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        image_dilate = cv2.dilate(image_thresh, self.row_kernel, iterations=10)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
+        # print(len(contours))
+        # print(x.shape)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+        # print(contours[1])
+        # largest_contour = contours[0]
+        # rect_cont = np.empty(shape=(len(contours), 4), dtype=int)
+        # min_rect_contour = np.empty(shape=(len(contours), 4), dtype=int)
+        # for ix, cont in enumerate(contours):
+        #     # rect_cont[ix] = cv2.minAreaRect(cont)
+        #     min_rect_contour[ix] = np.int0(cv2.boxPoints(cont))
+
+        boundary = np.stack(boundary)
+        # Curently sorted by distance from the origin (upper left corner)
+        boundary = sorted(
+            boundary, key=lambda x: np.sqrt(x[0]*x[0] + x[1]*x[1]))
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                if cv2.contourArea(cont) > 500:
+                    temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                          (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return boundary
+
+    def char_extract(self, path, show_images: bool = False):
+        """
+        Finds the contours around each cell
+        INPUT: Pre-processed image
+        OUTPUT: Countours of the cells
+        """
+        # Step 1 is to convert the image to binary
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        image_colour = cv2.cvtColor(image_copy, cv2.COLOR_GRAY2RGB)
+        image_blur = cv2.GaussianBlur(image, ksize=(3, 3), sigmaX=5,
+                                      sigmaY=5)
+        image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        # step 2 is to dilate the text to merge characters together
+        # want a balance between under dilation and over dilation
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 5))
+        # image_dilate = cv2.erode(image_thresh, kernel, iterations=1)
+
+        # step 3 is to find contours
+        contours, hierarchy = cv2.findContours(
+            image_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Assume there is no rotation in the image as it is already corrected
+        # lower left coordinates of bounding rectangle
+        x = np.zeros((len(contours)), dtype=int)
+        y = np.zeros((len(contours)), dtype=int)
+        # width and height of the bounding rectangle
+        w = np.zeros((len(contours)), dtype=int)
+        h = np.zeros((len(contours)), dtype=int)
+        # print(len(contours))
+        # print(x.shape)
+        # Loop through all contours to get the bounding boxes
+        for ix, cont in enumerate(contours):
+            x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
+        boundary = np.transpose(np.array([x, y, h, w], dtype=int))
+        # print(contours[1])
+        # largest_contour = contours[0]
+        # rect_cont = np.empty(shape=(len(contours), 4), dtype=int)
+        # min_rect_contour = np.empty(shape=(len(contours), 4), dtype=int)
+        # for ix, cont in enumerate(contours):
+        #     # rect_cont[ix] = cv2.minAreaRect(cont)
+        #     min_rect_contour[ix] = np.int0(cv2.boxPoints(cont))
+
+        # boundary = np.stack(boundary)
+        boundary = sorted(boundary, key=lambda x: x[0])
+
+        if show_images:
+            # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
+            # temp1 = cv2.drawContours(
+            #    image_colour, contours, -1, (0, 255, 0), 2)
+            for ix, cont in enumerate(contours):
+                temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
+                                      (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            # cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Contours", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Blurred Image", image_blur)
+            cv2.imshow("Threshold Image", image_thresh)
+            # cv2.imshow("Dilated Image", image_dilate)
+            cv2.imshow("Contours", temp1)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+
+        return boundary
 
 
 class ImageRotation():
@@ -427,14 +762,14 @@ class TableDetect():
         for c in cnts:
             cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
         # Remove vertical lines
-        # vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
-        # remove_vertical = cv2.morphologyEx(
-        #     image_thresh, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
-        # cnts = cv2.findContours(
-        #     remove_vertical, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-        # for c in cnts:
-        #     cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
+        vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 100))
+        remove_vertical = cv2.morphologyEx(
+            image_thresh, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
+        cnts = cv2.findContours(
+            remove_vertical, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        for c in cnts:
+            cv2.drawContours(image_copy, [c], -1, (255, 255, 255), 5)
 
         cv2.imwrite(fileOut, image_copy)
 

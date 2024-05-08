@@ -10,6 +10,8 @@ Testing file
 import os
 from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
 # import fitz
+import timeit
+import time
 
 FILE = "MW1959.pdf"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
@@ -92,5 +94,7 @@ FILE = "MW1959.pdf"
 
 # Test split and file organisation
 
+start_time = timeit.default_timer()
 test = PreProcess(file=FILE, year=1959)
 test.construct()
+print(timeit.default_timer() - start_time)
