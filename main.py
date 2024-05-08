@@ -1,3 +1,3 @@
 # The main file
 
-from pre_processing import ImageRotation
+from pre_processing import PreProcess
