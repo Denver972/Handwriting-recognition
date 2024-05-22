@@ -11,10 +11,13 @@
 Need cv2 for image manipulation and numpy for the arrays
 """
 import os
+import math
 import cv2
 import numpy as np
+import pandas as pd
 import fitz_old
 from pypdf import PdfReader, PdfWriter
+from PIL import Image
 
 
 class PreProcess():
@@ -26,7 +29,7 @@ class PreProcess():
 
     def __init__(self, file, year):
         """
-        Chosen kernels for dilation/erosion for spliting the image for 
+        Chosen kernels for dilation/erosion for spliting the image for
         character recognition
         file: Multipage PDF
         year: year of data
@@ -46,8 +49,8 @@ class PreProcess():
     def construct(self):
         """
         Goal is to create folder structure that is easily loopable through
-        with structure page->column->row->order. this will need to detect the 
-        pages in the pdf and then for now, the number of columns, rows and 
+        with structure page->column->row->order. this will need to detect the
+        pages in the pdf and then for now, the number of columns, rows and
         characters will be detected automatically in further parts
         INPUT: Multi page tabular pdf
         OUTPUT: Folder structure and
@@ -58,6 +61,8 @@ class PreProcess():
         os.mkdir(png_path)
         os.mkdir(year_path)
         input_pdf = fitz_old.open(self.file)
+        # create blank list to store the file names
+        file_names = []
         # Step 2: Split the pdf into individual pages and apply the
         #         pre-processing steps to each page at spliting time
         for page in input_pdf:
@@ -124,6 +129,47 @@ class PreProcess():
                         char_file = f"char{kx}.png"
                         char_result = os.path.join(row_folder, char_file)
                         cv2.imwrite(char_result, char)
+
+                        # Create resized characters: Goal dimensions 30x30
+                        resize_file = f"resized{kx}.png"
+                        resize_result = os.path.join(row_folder, resize_file)
+                        image = Image.open(char_result)
+                        width, height = image.size
+                        new_width = 30
+                        new_height = 30
+                        if width <= 30 and height <= 30:
+                            horizontal_adjustment = new_width - width
+                            vertical_adjustment = new_height - height
+                            # right = horizontal_adjustment/2
+                            left = math.floor(horizontal_adjustment/2)
+                            top = math.floor(vertical_adjustment/2)
+                            # bottom = vertical_adjustment/2
+                            result = Image.new(
+                                image.mode, (new_width, new_height), 255)
+
+                            result.paste(image, (left, top))
+                            result.save(resize_result)
+                        else:
+                            result = image.resize((new_width, new_height))
+                            result.save(resize_result)
+
+                        file_names.append(resize_result)
+        # Create the csv/dataframe to hold the character paths
+        dict = {"Character Path": file_names}
+        df = pd.DataFrame(dict)
+        df.to_csv(f"{self.year}Characters.csv", index=False)
+
+    def resize_char(self):
+        pass
+
+    def dataset_creation(self):
+        # want to create a list that contains the names of all the images and
+        # their paths. Then they will be converted to a dataframe and saved as
+        # a csv file
+        # file_names = []
+        # for pg in year_folder:
+        #     for
+        pass
 
     def rotate_image(self, path, show_images: bool = False):
         """
@@ -288,8 +334,8 @@ class PreProcess():
 
     def remove_vert_lines(self, path):
         """
-        Removes vertical lines from the table providing distinct columns 
-        separated by whitespace. Identifies objects in the image that have 
+        Removes vertical lines from the table providing distinct columns
+        separated by whitespace. Identifies objects in the image that have
         the structure of a vertical line and replaces the pixel value with
         that of a white pixel
         Input: Table image
@@ -479,9 +525,23 @@ class PreProcess():
 
         boundary = np.stack(boundary)
         # Curently sorted by distance from the origin (upper left corner)
+        # Distance from top may be better
         boundary = sorted(
             boundary, key=lambda x: np.sqrt(x[0]*x[0] + x[1]*x[1]))
+        # Want contours only larger than a specific size/ want to only extraxt
+        # the cells and nothing between on accident
+        # new_bound = boundary
+        # for ix, cont in enumerate(cont):
+        #     if cv2.contourArea(cont) > 500:
+        #         x[ix], y[ix], w[ix], h[ix] = cv2.boundingRect(cont)
 
+        # reduced_bounds = []
+        # index = []
+
+        # for i, bound in enumerate(boundary):
+        #     if bound[2] > 30:
+        #         index[i] = i
+        # print(reduced_bounds.shape)
         if show_images:
             # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
             # temp1 = cv2.drawContours(
@@ -548,10 +608,9 @@ class PreProcess():
         # for ix, cont in enumerate(contours):
         #     # rect_cont[ix] = cv2.minAreaRect(cont)
         #     min_rect_contour[ix] = np.int0(cv2.boxPoints(cont))
-
+        # sort characters left to right
         # boundary = np.stack(boundary)
         boundary = sorted(boundary, key=lambda x: x[0])
-
         if show_images:
             # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
             # temp1 = cv2.drawContours(

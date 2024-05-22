@@ -5,13 +5,15 @@
 """
 Testing file
 """
-# import numpy as np
-# import cv2
+import numpy as np
+import pandas as pd
+import cv2
 import os
 from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
 # import fitz
 import timeit
 import time
+import torch
 
 FILE = "MW1959.pdf"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
@@ -98,3 +100,37 @@ start_time = timeit.default_timer()
 test = PreProcess(file=FILE, year=1959)
 test.construct()
 print(timeit.default_timer() - start_time)
+
+# print(np.array(im.show("./Year_1959/")))
+
+
+# test model on actual data
+# conv_model = torch.load("./TestModelDigits.pt")
+
+# create dataframe of of the csv with just the ones that have labels
+
+# data = pd.read_csv("1959Characters copy2.csv")
+# print(data.columns)
+# no_missing = data.dropna()
+# print(no_missing.shape)
+# # remove the labels from sheet0 as they are typed(first 69 characters)
+# no_typed = no_missing.iloc[69:]
+# # remove first column
+# no_typed = no_typed.drop("Unnamed: 0", axis="columns")
+# no_typed.to_csv("Dataset1.csv", index=False)
+
+# # make a training set and a testing set
+# data = pd.read_csv("Dataset1.csv")
+# print(data.head())
+# # print(data.head())
+# # print(data.info())
+# # print(data.columns)
+# # print(data.at[1, "Label"])
+# # train = data.sample(frac=0.8, random_state=200)
+# # test = data.drop(train.index)
+# # train.to_csv("Training1.csv", index=False)
+# # test.to_csv("Testing1.csv", index=False)
+# # print(data.nunique())
+# lbl = data.Label
+
+# print(lbl)

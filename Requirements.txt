@@ -1,9 +1,10 @@
-Required packages:
+# Required packages:
 tkinter
 customtkinter
 matplotlib
 pytorch
 opencv
 numpy
+pandas
 pypdf
 os

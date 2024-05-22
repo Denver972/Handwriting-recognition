@@ -156,3 +156,5 @@ cython_debug/
 temp
 testsplit
 test_cont_extract
+EMNIST
+MNIST
