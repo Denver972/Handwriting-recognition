@@ -1,16 +1,14 @@
 # Playground to develop different models
-import os
-import cv2
 import torch
 import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms import Compose, ToTensor, Normalize
 from torch.utils.data import Dataset, DataLoader
-# from torchvision.datasets import EMNIST
+from torchvision.datasets import EMNIST
 from skimage import io, transform
-from sklearn import metrics
 import matplotlib.pyplot as plt
+import os
 from PIL import Image
 import numpy as np
 import pandas as pd
@@ -24,9 +22,9 @@ else:
 
 
 # Prepare and load the data
-n_epochs = 100
-# batch_size_train = 100
-# batch_size_test = 100
+n_epochs = 20
+batch_size_train = 100
+batch_size_test = 100
 learning_rate = 0.01
 momentum = 0.5
 log_interval = 10
@@ -38,36 +36,36 @@ random_seed = 1
 torch.backends.cudnn.enabled = False
 torch.manual_seed(random_seed)
 
-# root_dir = "./MNIST"
+root_dir = "./MNIST"
 # # root_dir = "./EMNIST/EMNIST/raw/gzip"
 
-# train_loader = torch.utils.data.DataLoader(
-#     torchvision.datasets.MNIST(
-#         root=root_dir, train=True, download=True,
-#         transform=torchvision.transforms.Compose([
-#             torchvision.transforms.ToTensor(),
-#             torchvision.transforms.Normalize(
-#                 (0.1307,), (0.3081,))
-#         ])),
-#     batch_size=batch_size_train, shuffle=True)
+train_loader = torch.utils.data.DataLoader(
+    torchvision.datasets.MNIST(
+        root=root_dir, train=True, download=True,
+        transform=torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(
+                (0.1307,), (0.3081,))
+        ])),
+    batch_size=batch_size_train, shuffle=True)
 
-# test_loader = torch.utils.data.DataLoader(
-#     torchvision.datasets.MNIST(
-#         root_dir, train=False, download=True,
-#         transform=torchvision.transforms.Compose([
-#             torchvision.transforms.ToTensor(),
-#             torchvision.transforms.Normalize(
-#                 (0.1307,), (0.3081,))
-#         ])),
-#     batch_size=batch_size_test, shuffle=True)
+test_loader = torch.utils.data.DataLoader(
+    torchvision.datasets.MNIST(
+        root_dir, train=False, download=True,
+        transform=torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(
+                (0.1307,), (0.3081,))
+        ])),
+    batch_size=batch_size_test, shuffle=True)
 
 ###### Custom Dataset######
 data = pd.read_csv("./Training1.csv")
 
-# lbl = data.Label
-# # print(lbl)
-# idx_to_class = {ix: label for ix, label in enumerate(lbl)}
-# class_to_idx = {value: key for key, value in idx_to_class.items()}
+lbl = data.Label
+# print(lbl)
+idx_to_class = {ix: label for ix, label in enumerate(lbl)}
+class_to_idx = {value: key for key, value in idx_to_class.items()}
 # print(idx_to_class)
 
 
@@ -95,25 +93,17 @@ class MWINPDataset(Dataset):
 
         img_name = os.path.join(self.root_dir,
                                 self.MWINP_frame.iloc[idx, 0])
-        image = np.array(cv2.imread(img_name, 0))
-        # image = image.transpose()
-        image = image*1.
-        image -= image.min()
-        image /= image.max()
-        # image.reshape(30, 30)
-        image = np.expand_dims(image, axis=0)
-        # print(image.shape)
-        image = torch.tensor(image, dtype=torch.float32)
-        # image =
-        characters = self.MWINP_frame.iloc[idx, 2]
-        # label = class_to_idx[characters]
+        image = io.imread(img_name)
+        image_tensor = torch.from_numpy(image)
+        characters = self.MWINP_frame.iloc[idx, 1]
+        label = class_to_idx[characters]
         # label = torch.as_tensor(characters)
-        sample = {'image': image,
-                  'characters': torch.tensor(characters, dtype=torch.int32)}
+        sample = {'image': image_tensor,
+                  'characters': torch.tensor(int(label), dtype=torch.int32)}
         if self.transform:
             sample = self.transform(sample)
 
-        return image, characters
+        return image_tensor, label
 
 
 # class ToTensor(object):
@@ -129,8 +119,9 @@ class MWINPDataset(Dataset):
 #         return {'image': torch.from_numpy(image),
 #                 'landmarks': torch.from_numpy(characters)}
 
-custom_train_data = MWINPDataset("Training1.csv", "./")
-custom_test_data = MWINPDataset("Testing1.csv", "./")
+
+# custom_train_data = MWINPDataset("Training1.csv", "./")
+# custom_test_data = MWINPDataset("Testing1.csv", "./")
 # check if it has worked
 # for i, sample in enumerate(custom_train_data):
 #     print(i, custom_train_data[0], custom_train_data[1])
@@ -138,13 +129,10 @@ custom_test_data = MWINPDataset("Testing1.csv", "./")
 #     if i == 3:
 #         break
 
-
-custom_train_loader = DataLoader(
-    custom_train_data, batch_size=30, shuffle=True)
-
-custom_test_loader = DataLoader(custom_test_data, batch_size=10, shuffle=True)
-
 # optimizer class. Currently most basic with gradient descent.
+# custom_train_loader = DataLoader(
+#     custom_train_data, batch_size=50, shuffle=True)
+# custom_test_loader = DataLoader(custom_test_data, batch_size=10, shuffle=True)
 
 
 class GradientDescent():
@@ -186,7 +174,7 @@ class ConvModel(nn.Module):
     def __init__(self,
                  input_features):
         """
-        Network levels,
+        Network levels, 
         """
         super().__init__()
         self.input_features = input_features
@@ -196,14 +184,14 @@ class ConvModel(nn.Module):
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv3 = nn.Conv2d(60, 120, kernel_size=1, stride=1)
         self.pool3 = nn.MaxPool2d(kernel_size=1, stride=1)
-        self.fc_1 = nn.Linear(120, 15)
+        self.fc_1 = nn.Linear(120, 10)
 
     def forward(self, x):
         """
         The forward method required by nn.Module base class.
-        connects the
+        connects the 
         """
-
+        # x = x.float()
         x = self.conv1(x)
         x = torch.relu(x)
         x = self.pool1(x)
@@ -241,10 +229,10 @@ def train_epoch(training_loader,
 
         # check x,y types
 
-        # print(f"Batch {i} - x type: {type(x)}")
-        # print(x.size())
-        # print(f"Batch {i} - y type: {type(y)}")
-        # print(y.size())
+        print(f"Batch {i} - x type: {type(x)}")
+        print(x.size())
+        print(f"Batch {i} - y type: {type(y)}")
+        print(y.size())
         # Move input to device
         x = x.to(device)
         y = y.to(device)
@@ -269,10 +257,10 @@ def train_epoch(training_loader,
 
     for i, (x, y) in enumerate(validation_loader):
         # Move input to device
-        # print(f"Batch {i} - x type: {type(x)}")
-        # print(x.size())
-        # print(f"Batch {i} - y type: {type(y)}")
-        # print(y.size())
+        print(f"Batch {i} - x type: {type(x)}")
+        print(x.size())
+        print(f"Batch {i} - y type: {type(y)}")
+        print(y.size())
         x = x.to(device)
         y = y.to(device)
 
@@ -291,8 +279,8 @@ def train_epoch(training_loader,
 
 def accuracy(model, validation_loader, p):
     model.eval()
-    real = []
-    predict = []
+    # targ = []
+    # pred = []
     correct = 0
     for i, (x, y) in enumerate(validation_loader):
 
@@ -303,19 +291,15 @@ def accuracy(model, validation_loader, p):
         pred = out.data.max(1, keepdim=True)[1]
         correct += pred.eq(y.data.view_as(pred)).sum()
 
-        real[i] = y
-        predict[i] = pred
-
         # outputs = torch.sigmoid(outputs)
         # predict = (outputs).float()
         # print(predict)
         # targ.append(y.numpy())
         # for i in range(len(predict.tensor.detach().numpy())):
         #     pred.append(int(predict.tensor.detach().numpy()[i][0]))
-    accu = 100. * correct / len(custom_test_loader.dataset)
+    acc = 100. * correct / len(test_loader.dataset)
     # targets = np.concatenate(targ)
-    conf_mat = metrics.ConfusionMatrixDisplay.from_predictions(
-        real, predict)
+
     # fp = 0
     # tp = 0
     # tn = 0
@@ -328,7 +312,7 @@ def accuracy(model, validation_loader, p):
 
     # a = (tp + tn)/(fp + tp + tn + fn)
     # print(pred)
-    return (accu, conf_mat)
+    return (acc)
 
 
 train_loss = np.zeros(n_epochs)
@@ -336,13 +320,13 @@ valid_loss = np.zeros(n_epochs)
 conv_model = ConvModel(input_features=1)
 for epoch in range(1, n_epochs+1):
     # constant learning rate
-    if epoch < n_epochs/2:
+    if epoch < 11:
         lr = learning_rate
     else:
         lr = learning_rate/10
 
-    output = train_epoch(training_loader=custom_train_loader,
-                         validation_loader=custom_test_loader,
+    output = train_epoch(training_loader=train_loader,
+                         validation_loader=test_loader,
                          model=conv_model,
                          loss=loss_NLL,
                          optimizer=GradientDescent(
@@ -354,10 +338,8 @@ for epoch in range(1, n_epochs+1):
     print(
         f"epoch {epoch}, training_loss {output[0]}, validation_loss {output[1]}")
 
-acc = accuracy(conv_model, custom_test_loader, 0.5)
-print("Accuracy CNN: ", acc[0])
-print(f"Confusion matrix:\n{acc[1].confusion_matrix}")
-
+a1 = accuracy(conv_model, custom_test_loader, 0.5)
+print("Accuracy CNN: ", a1)
 torch.save(conv_model, "./TestModelDigits3.pt")
 plt.plot(range(1, n_epochs+1), train_loss)
 plt.plot(range(1, n_epochs+1), valid_loss)

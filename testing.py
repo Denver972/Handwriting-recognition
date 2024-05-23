@@ -96,12 +96,17 @@ FILE = "MW1959.pdf"
 
 # Test split and file organisation
 
-start_time = timeit.default_timer()
-test = PreProcess(file=FILE, year=1959)
-test.construct()
-print(timeit.default_timer() - start_time)
+# start_time = timeit.default_timer()
+# test = PreProcess(file=FILE, year=1959)
+# test.construct()
+# print(timeit.default_timer() - start_time)
 
-# print(np.array(im.show("./Year_1959/")))
+
+# FILENAME = "./Year_1959/Sheet1/ColumnFolder1/RowFolder2/resized0.png"
+
+# test = PreProcess(file=FILENAME, year=1500)
+# test.convert_to_binary(path=FILENAME, show_images=True)
+# # print(np.array(im.show("./Year_1959/")))
 
 
 # test model on actual data
@@ -122,15 +127,47 @@ print(timeit.default_timer() - start_time)
 # # make a training set and a testing set
 # data = pd.read_csv("Dataset1.csv")
 # print(data.head())
-# # print(data.head())
-# # print(data.info())
-# # print(data.columns)
-# # print(data.at[1, "Label"])
-# # train = data.sample(frac=0.8, random_state=200)
-# # test = data.drop(train.index)
-# # train.to_csv("Training1.csv", index=False)
-# # test.to_csv("Testing1.csv", index=False)
-# # print(data.nunique())
+# print(data.info())
+# print(data.columns)
+# print(data.at[1, "Label"])
+# train = data.sample(frac=0.8, random_state=200)
+# test = data.drop(train.index)
+# train.to_csv("Training1.csv", index=False)
+# test.to_csv("Testing1.csv", index=False)
+# print(data.nunique())
 # lbl = data.Label
 
 # print(lbl)
+######## Helper function to change labels to numbers and numbers to labels######
+# data = pd.read_csv("Dataset1.csv")
+# classes = {
+#     "0": 0,
+#     "1": 1,
+#     "2": 2,
+#     "3": 3,
+#     "4": 4,
+#     "5": 5,
+#     "6": 6,
+#     "7": 7,
+#     "8": 8,
+#     "9": 9,
+#     "m": 10,
+#     "M": 11,
+#     "/": 12,
+#     ".": 13,
+#     "-": 14
+# }
+# num_label = data["Label"].map(classes)
+# # print(num_label)
+# data["Class"] = num_label
+# print(data.head())
+# data.to_csv("Dataset1.csv", index=False)
+##############################################################################
+
+# Replace part of a string with another string
+data = pd.read_csv("Testing1.csv")
+print(data.head())
+data["Image"] = data["Image"].str.replace("resized", "binary")
+# data.replace("resized", "binary", inplace=True)
+print(data.head())
+data.to_csv("Training1.csv", index=False)

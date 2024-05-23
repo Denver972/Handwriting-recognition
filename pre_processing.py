@@ -153,7 +153,11 @@ class PreProcess():
                             result = image.resize((new_width, new_height))
                             result.save(resize_result)
 
-                        file_names.append(resize_result)
+                        binary_file = f"binary{kx}.png"
+                        binary_result = os.path.join(row_folder, binary_file)
+                        binary = self.convert_to_binary(path=resize_result)
+                        cv2.imwrite(binary_result, binary)
+                        file_names.append(binary_result)
         # Create the csv/dataframe to hold the character paths
         dict = {"Character Path": file_names}
         df = pd.DataFrame(dict)
@@ -633,6 +637,32 @@ class PreProcess():
             cv2.waitKey(1)
 
         return boundary
+
+    def convert_to_binary(self, path, show_images: bool = False):
+        """
+        Convert to binary and invert the color so text will be white (1)
+        and background will be black (0) use otsu method as it should yield
+        good performance when the character is not a single shade
+        """
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        image_blur = cv2.GaussianBlur(image, ksize=(3, 3), sigmaX=15,
+                                      sigmaY=15)
+        thresh, image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        image_out = cv2.threshold(
+            image_copy, thresh, 255, cv2.THRESH_BINARY_INV)[1]
+        if show_images:
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Output Image", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Output Image", image_out)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return image_out
 
 
 class ImageRotation():
