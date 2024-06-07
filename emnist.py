@@ -2,16 +2,16 @@
 import os
 import cv2
 import torch
-import torchvision
+# import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.transforms import Compose, ToTensor, Normalize
+# from torchvision.transforms import Compose, ToTensor, Normalize
 from torch.utils.data import Dataset, DataLoader
 # from torchvision.datasets import EMNIST
-from skimage import io, transform
+# from skimage import io, transform
 from sklearn import metrics
 import matplotlib.pyplot as plt
-from PIL import Image
+# from PIL import Image
 import numpy as np
 import pandas as pd
 
@@ -24,10 +24,10 @@ else:
 
 
 # Prepare and load the data
-n_epochs = 100
+n_epochs = 600
 # batch_size_train = 100
 # batch_size_test = 100
-learning_rate = 0.01
+learning_rate = 0.001
 momentum = 0.5
 log_interval = 10
 loss_NLL = torch.nn.NLLLoss()
@@ -62,7 +62,7 @@ torch.manual_seed(random_seed)
 #     batch_size=batch_size_test, shuffle=True)
 
 ###### Custom Dataset######
-data = pd.read_csv("./Training1.csv")
+data = pd.read_csv("./Training5.csv")
 
 # lbl = data.Label
 # # print(lbl)
@@ -99,13 +99,15 @@ class MWINPDataset(Dataset):
         # image = image.transpose()
         image = image*1.
         image -= image.min()
-        image /= image.max()
+        image = image/image.max()  # 102  # 51  # image.max() #10 # 25.5  # image.max()
+        # print(image)
         # image.reshape(30, 30)
         image = np.expand_dims(image, axis=0)
         # print(image.shape)
         image = torch.tensor(image, dtype=torch.float32)
         # image =
         characters = self.MWINP_frame.iloc[idx, 2]
+        # [idx,2] for individual character recognition
         # label = class_to_idx[characters]
         # label = torch.as_tensor(characters)
         sample = {'image': image,
@@ -129,8 +131,8 @@ class MWINPDataset(Dataset):
 #         return {'image': torch.from_numpy(image),
 #                 'landmarks': torch.from_numpy(characters)}
 
-custom_train_data = MWINPDataset("Training1.csv", "./")
-custom_test_data = MWINPDataset("Testing1.csv", "./")
+custom_train_data = MWINPDataset("Training5.csv", "./")
+custom_test_data = MWINPDataset("Testing5.csv", "./")
 # check if it has worked
 # for i, sample in enumerate(custom_train_data):
 #     print(i, custom_train_data[0], custom_train_data[1])
@@ -140,9 +142,10 @@ custom_test_data = MWINPDataset("Testing1.csv", "./")
 
 
 custom_train_loader = DataLoader(
-    custom_train_data, batch_size=30, shuffle=True)
-
-custom_test_loader = DataLoader(custom_test_data, batch_size=10, shuffle=True)
+    custom_train_data, batch_size=64, shuffle=True)
+# 64 batch size seems best
+custom_test_loader = DataLoader(
+    custom_test_data, batch_size=1000, shuffle=True)
 
 # optimizer class. Currently most basic with gradient descent.
 
@@ -192,27 +195,44 @@ class ConvModel(nn.Module):
         self.input_features = input_features
         self.conv1 = nn.Conv2d(input_features, 30, kernel_size=5, stride=1)
         self.pool1 = nn.MaxPool2d(kernel_size=4, stride=4)
-        self.conv2 = nn.Conv2d(30, 60, kernel_size=4, stride=1)
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.conv15 = nn.Conv2d(30, 30, 3, 1)  # testing out this
+        self.pool15 = nn.MaxPool2d(
+            kernel_size=3, stride=1, padding=1)  # testing this out
+        self.conv2 = nn.Conv2d(30, 60, kernel_size=2, stride=1)
+        self.pool2 = nn.MaxPool2d(kernel_size=3, stride=2)
+        # self.conv25 = nn.Conv2d(60, 60, 1, 4)  # test7
+        # self.pool25 = nn.MaxPool2d(kernel_size=1, stride=1)  # test7
         self.conv3 = nn.Conv2d(60, 120, kernel_size=1, stride=1)
         self.pool3 = nn.MaxPool2d(kernel_size=1, stride=1)
-        self.fc_1 = nn.Linear(120, 15)
+        # self.conv4 = nn.Conv2d(120, 240, 1, 1)
+        # self.pool4 = nn.MaxPool2d(1, 1)
+        self.fc_1 = nn.Linear(120, 18)
+        #
 
     def forward(self, x):
         """
         The forward method required by nn.Module base class.
-        connects the
+        connects the network
         """
 
         x = self.conv1(x)
         x = torch.relu(x)
         x = self.pool1(x)
+        x = self.conv15(x)  # test
+        x = torch.relu(x)  # test
+        x = self.pool15(x)  # test
         x = self.conv2(x)
         x = torch.relu(x)
         x = self.pool2(x)
+        # x = self.conv25(x)  # test7
+        # x = torch.relu(x)  # test7
+        # x = self.pool25(x)  # test7
         x = self.conv3(x)
         x = torch.relu(x)
         x = self.pool3(x)
+        # x = self.conv4(x)  # test 8
+        # x = torch.relu(x)  # test 8
+        # x = self.pool4(x)  # test 8
         x = x.flatten(1, -1)
         x = self.fc_1(x)
         return F.log_softmax(x, dim=1)
@@ -289,7 +309,7 @@ def train_epoch(training_loader,
     return (training_loss, validation_loss)
 
 
-def accuracy(model, validation_loader, p):
+def accuracy(model, validation_loader):
     model.eval()
     real = []
     predict = []
@@ -300,11 +320,11 @@ def accuracy(model, validation_loader, p):
         y = y.to(device)
 
         out = model(x)
-        pred = out.data.max(1, keepdim=True)[1]
+        pred = out.data.max(1, keepdim=False)[1]
         correct += pred.eq(y.data.view_as(pred)).sum()
 
-        real[i] = y
-        predict[i] = pred
+        real.append(y)
+        predict.append(pred)
 
         # outputs = torch.sigmoid(outputs)
         # predict = (outputs).float()
@@ -312,10 +332,21 @@ def accuracy(model, validation_loader, p):
         # targ.append(y.numpy())
         # for i in range(len(predict.tensor.detach().numpy())):
         #     pred.append(int(predict.tensor.detach().numpy()[i][0]))
-    accu = 100. * correct / len(custom_test_loader.dataset)
+    accu = 100. * correct / len(validation_loader.dataset)
     # targets = np.concatenate(targ)
-    conf_mat = metrics.ConfusionMatrixDisplay.from_predictions(
-        real, predict)
+    print(real)
+    print(predict)
+    real = [r.numpy() for r in real]
+    predict = [p.numpy() for p in predict]
+    real = np.array(real, dtype=np.uint).flatten()
+    predict = np.array(predict, dtype=np.uint).flatten()
+    print(real)
+    print(predict)
+    conf_mat = metrics.confusion_matrix(
+        real, predict, labels=np.arange(17))
+    # 14 for dataset 3
+    # 18 for dataset4
+    # 2 for dataset5
     # fp = 0
     # tp = 0
     # tn = 0
@@ -345,25 +376,29 @@ for epoch in range(1, n_epochs+1):
                          validation_loader=custom_test_loader,
                          model=conv_model,
                          loss=loss_NLL,
-                         optimizer=GradientDescent(
-                             parameters=conv_model.parameters(), learning_rate=lr),
+                         optimizer=torch.optim.SGD(params=conv_model.parameters(), lr=learning_rate,
+                                                   momentum=0.9),
+                         #  optimizer=GradientDescent(
+                         #      parameters=conv_model.parameters(), learning_rate=lr),
                          device=device)
     train_loss[epoch-1] = output[0]
     valid_loss[epoch-1] = output[1]
+    loss_difference = valid_loss[epoch-1] - train_loss[epoch-1]
 
     print(
         f"epoch {epoch}, training_loss {output[0]}, validation_loss {output[1]}")
-
-acc = accuracy(conv_model, custom_test_loader, 0.5)
+    if valid_loss[epoch-1] < 0.3 and loss_difference > 0.05:
+        break
+acc = accuracy(conv_model, custom_test_loader)
 print("Accuracy CNN: ", acc[0])
-print(f"Confusion matrix:\n{acc[1].confusion_matrix}")
+print(f"Confusion matrix:\n{acc[1]}")
 
-torch.save(conv_model, "./TestModelDigits3.pt")
+torch.save(conv_model, "./Model8-SGDBatchRealData.pt")
 plt.plot(range(1, n_epochs+1), train_loss)
 plt.plot(range(1, n_epochs+1), valid_loss)
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.title("Loss aginst Epoch")
 plt.legend(["Training", "Validation"])
-plt.savefig("Model2.png")
+plt.savefig("Model8-SGD64batch.png")
 plt.show()

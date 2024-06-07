@@ -44,7 +44,8 @@ class PreProcess():
             cv2.MORPH_RECT, (1, 100))
         self.col_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 50))
         self.row_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 1))
-        self.char_kernel = None
+        self.char_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        self.erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 
     def construct(self):
         """
@@ -137,7 +138,7 @@ class PreProcess():
                         width, height = image.size
                         new_width = 30
                         new_height = 30
-                        if width <= 30 and height <= 30:
+                        if width <= new_width and height <= new_height:
                             horizontal_adjustment = new_width - width
                             vertical_adjustment = new_height - height
                             # right = horizontal_adjustment/2
@@ -149,6 +150,24 @@ class PreProcess():
 
                             result.paste(image, (left, top))
                             result.save(resize_result)
+                        elif width < new_width:
+                            horizontal_adjustment = new_width - width
+                            left = math.floor(horizontal_adjustment/2)
+                            widened_image = Image.new(
+                                image.mode, (new_width, height), 255)
+                            widened_image.paste(image, (left, 0))
+                            widened_result = widened_image.resize(
+                                (new_width, new_height))
+                            widened_result.save(resize_result)
+                        elif height < new_height:
+                            vertical_adjustment = new_height - height
+                            top = math.floor(vertical_adjustment/2)
+                            heightened_image = Image.new(
+                                image.mode, (width, new_height), 255)
+                            heightened_image.paste(image, (0, top))
+                            heightened_result = heightened_image.resize(
+                                (new_width, new_height))
+                            heightened_result.save(resize_result)
                         else:
                             result = image.resize((new_width, new_height))
                             result.save(resize_result)
@@ -157,7 +176,13 @@ class PreProcess():
                         binary_result = os.path.join(row_folder, binary_file)
                         binary = self.convert_to_binary(path=resize_result)
                         cv2.imwrite(binary_result, binary)
-                        file_names.append(binary_result)
+                        skeleton_file = f"skeleton{kx}.png"
+                        skeleton_result = os.path.join(
+                            row_folder, skeleton_file)
+                        skeleton = self.skeletonize(path=binary_result)
+                        cv2.imwrite(skeleton_result, skeleton)
+
+                        file_names.append(skeleton_result)
         # Create the csv/dataframe to hold the character paths
         dict = {"Character Path": file_names}
         df = pd.DataFrame(dict)
@@ -658,6 +683,34 @@ class PreProcess():
             cv2.namedWindow("Output Image", cv2.WINDOW_NORMAL)
             cv2.imshow("Input Image", image)
             cv2.imshow("Threshold Image", image_thresh)
+            cv2.imshow("Output Image", image_out)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return image_out
+
+    def skeletonize(self, path, show_images: bool = False):
+        """
+        Extract the skeletons of the characters in order to make them more 
+        uniform. Need to dialate first as some characters have gaps in their 
+        lines so erosion just makes those larger
+        INPUT: Binary Image
+        OUTPUT: Skeletonized Image
+        """
+        image = np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        # image_blur = cv2.GaussianBlur(image, ksize=(3, 3), sigmaX=15,
+        #                              sigmaY=15)
+        image_dilate = cv2.dilate(
+            image_copy, kernel=self.char_kernel, iterations=1)
+        image_out = cv2.erode(
+            image_dilate, kernel=self.erosion_kernel, iterations=1)
+        if show_images:
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Dilated Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Output Image", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Dilated Image", image_dilate)
             cv2.imshow("Output Image", image_out)
             cv2.waitKey()
             cv2.destroyAllWindows()

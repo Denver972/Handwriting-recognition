@@ -7,6 +7,7 @@ from torchvision.transforms import Compose, ToTensor, Normalize
 from torch.utils.data import Dataset, DataLoader
 from torchvision.datasets import EMNIST
 from skimage import io, transform
+from sklearn import metrics
 import matplotlib.pyplot as plt
 import os
 from PIL import Image
@@ -22,7 +23,7 @@ else:
 
 
 # Prepare and load the data
-n_epochs = 20
+n_epochs = 10
 batch_size_train = 100
 batch_size_test = 100
 learning_rate = 0.01
@@ -229,10 +230,10 @@ def train_epoch(training_loader,
 
         # check x,y types
 
-        print(f"Batch {i} - x type: {type(x)}")
-        print(x.size())
-        print(f"Batch {i} - y type: {type(y)}")
-        print(y.size())
+        # print(f"Batch {i} - x type: {type(x)}")
+        # print(x.size())
+        # print(f"Batch {i} - y type: {type(y)}")
+        # print(y.size())
         # Move input to device
         x = x.to(device)
         y = y.to(device)
@@ -257,10 +258,10 @@ def train_epoch(training_loader,
 
     for i, (x, y) in enumerate(validation_loader):
         # Move input to device
-        print(f"Batch {i} - x type: {type(x)}")
-        print(x.size())
-        print(f"Batch {i} - y type: {type(y)}")
-        print(y.size())
+        # print(f"Batch {i} - x type: {type(x)}")
+        # print(x.size())
+        # print(f"Batch {i} - y type: {type(y)}")
+        # print(y.size())
         x = x.to(device)
         y = y.to(device)
 
@@ -277,10 +278,10 @@ def train_epoch(training_loader,
     return (training_loss, validation_loss)
 
 
-def accuracy(model, validation_loader, p):
+def accuracy(model, validation_loader):
     model.eval()
-    # targ = []
-    # pred = []
+    real = []
+    predict = []
     correct = 0
     for i, (x, y) in enumerate(validation_loader):
 
@@ -288,8 +289,11 @@ def accuracy(model, validation_loader, p):
         y = y.to(device)
 
         out = model(x)
-        pred = out.data.max(1, keepdim=True)[1]
+        pred = out.data.max(1, keepdim=False)[1]
         correct += pred.eq(y.data.view_as(pred)).sum()
+
+        real.append(y)
+        predict.append(pred)
 
         # outputs = torch.sigmoid(outputs)
         # predict = (outputs).float()
@@ -297,9 +301,18 @@ def accuracy(model, validation_loader, p):
         # targ.append(y.numpy())
         # for i in range(len(predict.tensor.detach().numpy())):
         #     pred.append(int(predict.tensor.detach().numpy()[i][0]))
-    acc = 100. * correct / len(test_loader.dataset)
+    accu = 100. * correct / len(test_loader.dataset)
     # targets = np.concatenate(targ)
-
+    print(real)
+    print(predict)
+    real = [r.numpy() for r in real]
+    predict = [p.numpy() for p in predict]
+    real = np.array(real, dtype=np.uint).flatten()
+    predict = np.array(predict, dtype=np.uint).flatten()
+    print(real)
+    print(predict)
+    conf_mat = metrics.confusion_matrix(
+        real, predict, labels=np.arange(10))
     # fp = 0
     # tp = 0
     # tn = 0
@@ -312,7 +325,7 @@ def accuracy(model, validation_loader, p):
 
     # a = (tp + tn)/(fp + tp + tn + fn)
     # print(pred)
-    return (acc)
+    return (accu, conf_mat)
 
 
 train_loss = np.zeros(n_epochs)
@@ -338,8 +351,9 @@ for epoch in range(1, n_epochs+1):
     print(
         f"epoch {epoch}, training_loss {output[0]}, validation_loss {output[1]}")
 
-a1 = accuracy(conv_model, custom_test_loader, 0.5)
-print("Accuracy CNN: ", a1)
+a1 = accuracy(conv_model, test_loader)
+print("Accuracy CNN: ", a1[0])
+print("Confusion Matrix: \n", a1[1])
 torch.save(conv_model, "./TestModelDigits3.pt")
 plt.plot(range(1, n_epochs+1), train_loss)
 plt.plot(range(1, n_epochs+1), valid_loss)
