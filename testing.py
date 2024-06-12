@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import cv2
 import os
-from pre_processing import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
+from pre_processing_test import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
 # import fitz
 import timeit
 import time
@@ -59,6 +59,7 @@ FILE = "MW1959.pdf"
 # words.cell_locate(file=FILE, show_images=True)
 # words.extraction(file=FILE)
 
+# FILE = "Year_NoSmall1959/Sheet1/CropTable.png"
 # table = TableExtraction()
 # table.table_locate(file=FILE, show_images=True)
 # table.extraction(file=FILE)
@@ -95,7 +96,6 @@ FILE = "MW1959.pdf"
 #     char.char_locate(file=file, show_images=True)
 
 # Test split and file organisation
-
 # start_time = timeit.default_timer()
 # test = PreProcess(file=FILE, year=1959)
 # test.construct()
@@ -159,39 +159,52 @@ FILE = "MW1959.pdf"
 #     "8": 8,
 #     "9": 9,
 #     "m": 10,
-#     "M": 10,
-#     "/": 1,
+#     # "M": 10,
+#     # "/": 1,
 #     ".": 11,
 #     "-": 12,
 #     "+": 13,
 #     "c": 14,
 #     "'": 15,
 #     "w": 16,
-#     "W": 16,
+#     # "W": 16,
 #     "s": 17,
-#     "S": 17,
+#     # "S": 17,
 #     "d": 18,
 #     "N": 19,
 #     "e": 20,
 #     "H": 21
 # }
-# TODO: figure out how to invert correctly
-# inv_classes = {v: k for k, v in classes.items()}
 # num_label = data["Label"].map(classes)
 # # print(num_label)
 # data["Class"] = num_label
-# print(data.head())
 # data.to_csv("Testing4.csv", index=False)
+# TODO: figure out how to invert correctly
+# df = pd.read_csv("PredictedEarlyThreshold.csv")
+# inv_classes = {v: k for k, v in classes.items()}
+# class_label = df["PredClass"].map(inv_classes)
+# df["Label"] = class_label
+# df.to_csv("PredictedEarlyThreshold.csv", index=False)
+
+# print(data.head())
+
+####################################################
+# Create the two columns needed for the dataframe
+# df = pd.read_csv("1959CharactersEarlyThreshold.csv")
+# df["Label"] = 0
+# df["Class"] = 0
+# df.to_csv("1959CharactersEarlyThreshold.csv", index=False)
+
 ##############################################################################
 
 # Replace part of a string with another string
-# data = pd.read_csv("Dataset4.csv")
-# print(data.head())
-# data["Character Path"] = data["Character Path"].str.replace(
-#     "binary", "skeleton")
+# data = pd.read_csv("PredictedNoSmall.csv")
+# # print(data.head())
+# data["CharacterPath"] = data["CharacterPath"].str.replace(
+#     "skeleton", "binary")
 # # data.replace("resized", "binary", inplace=True)
 # print(data.head())
-# data.to_csv("Dataset4.csv", index=False)
+# data.to_csv("PredictedNoSmall.csv", index=False)
 
 ########## FREQUENCY############
 
@@ -242,7 +255,7 @@ FILE = "MW1959.pdf"
 # split into two at the row folder part
 
 # START OF SPLITING THE DATAFRAME
-# whole_data = pd.read_csv("Dataset5.csv")
+# whole_data = pd.read_csv("PredictedEarlyThreshold.csv")
 # whole_data[["Root", "Year", "Sheet", "ColumnIndex", "RowIndex", "CharIndex"]
 #            ] = whole_data.CharacterPath.str.split("/", expand=True)
 # whole_data["CharIndex"] = whole_data["CharIndex"].str.replace("skeleton", "")
@@ -255,7 +268,7 @@ FILE = "MW1959.pdf"
 
 # print(whole_data)
 # upd_data = whole_data.drop(["CharacterPath", "Root"], axis=1)
-# upd_data.to_csv("Updated5.csv", index=False)
+# upd_data.to_csv("UpdatedEarlyThresh.csv", index=False)
 
 # END OF SPLITTING THE DATAFRAME
 
@@ -280,9 +293,9 @@ FILE = "MW1959.pdf"
 # want to fix the sheet and column index then merge the label column based on
 # its charIndex. For this introduce a new column CellText
 
-# df = pd.read_csv("Updated5.csv")
+# df = pd.read_csv("UpdatedEarlyThresh.csv")
 # df = df.dropna(axis=0, subset="Label")
-# # print(df)
+# print(df)
 
 
 # # Sheet Number
@@ -313,8 +326,8 @@ FILE = "MW1959.pdf"
 #                 cell.append(char)
 #             # print the cell value
 #             value = "".join(cell)
-#             print(f"{sx}, {cx}, {rx}")
-#             print(value)
+#             # print(f"{sx}, {cx}, {rx}")
+#             # print(value)
 #             sheet_list.append(sx)
 #             column_list.append(cx)
 #             row_list.append(rx)
@@ -323,37 +336,56 @@ FILE = "MW1959.pdf"
 #             csv_dict = {"Sheet": sheet_list, "Column": column_list,
 #                         "Row": row_list, "Cell": cell_list}
 #             text_df = pd.DataFrame(csv_dict)
-#             text_df.to_csv(f"Sheet{sx}.csv", index=False)
+#             text_df.to_csv(f"TestThreshFolder/Sheet{sx}.csv", index=False)
 #####################################
 ############# TAKE LONG DATA AND CHANGE TO TABLE FORMAT############
 # Input: Sheet
 
-sheet_df = pd.read_csv("Sheet1.csv")
-# get column indeces
-column_index = range(0, (max(sheet_df["Column"].unique())+1))
-# get row indeces
-row_index = range(0, (max(sheet_df["Row"].unique())+1))
-# print(row_index[1])
-df = pd.DataFrame(index=row_index, columns=column_index)
-# df = pd.DataFrame(index=row_index)
-# cell = sheet_df.loc[0].at["Cell"]
-# sheet_df[(sheet_df["Column"] == 0)
-#                 & (sheet_df["Row"] == 1)]["Cell"]
-# print(cell)
-for sx in sheet_df["Sheet"].unique():
-    for cx in sheet_df["Column"].unique():
-        col_df = sheet_df[sheet_df["Column"] == cx]
-        # print(col_df)
-        # print("New Column")
-        for rx in col_df["Row"].unique():
-            row_df = col_df[col_df["Row"] == rx]
-            # print(row_df)
-            cell_value = row_df["Cell"].values
-            # sheet_df[(sheet_df["Column"] == cx)
-            #                       & (sheet_df["Row"] == rx)]["Cell"]
-            print(cell_value)
-            # TODO: Update to work with pandas 3.0
-            df.loc[rx][cx] = cell_value
-            # df.loc[rx, f"{cx}"]
+# for px in range(0, 75):
+#     sheet_df = pd.read_csv(f"TestThreshFolder/Sheet{px}.csv")
+#     # get column indeces
+#     column_index = range(0, (max(sheet_df["Column"].unique())+1))
+#     # get row indeces
+#     row_index = range(0, (max(sheet_df["Row"].unique())+1))
+#     # print(row_index[1])
+#     df = pd.DataFrame(index=row_index, columns=column_index)
+#     # df = pd.DataFrame(index=row_index)
+#     # cell = sheet_df.loc[0].at["Cell"]
+#     # sheet_df[(sheet_df["Column"] == 0)
+#     #                 & (sheet_df["Row"] == 1)]["Cell"]
+#     # print(cell)
+#     for sx in sheet_df["Sheet"].unique():
+#         for cx in sheet_df["Column"].unique():
+#             col_df = sheet_df[sheet_df["Column"] == cx]
+#             # print(col_df)
+#             # print("New Column")
+#             for rx in col_df["Row"].unique():
+#                 row_df = col_df[col_df["Row"] == rx]
+#                 # print(row_df)
+#                 cell_value = row_df["Cell"].values
+#                 # sheet_df[(sheet_df["Column"] == cx)
+#                 #                       & (sheet_df["Row"] == rx)]["Cell"]
+#                 # print(cell_value)
+#                 # TODO: Update to work with pandas 3.0
+#                 df.loc[rx][cx] = cell_value
+#                 # df.loc[rx, f"{cx}"]
+#     # print(df)
+#     df.to_csv(f"TestThreshFolder/Test{px}.csv", index=False)
+
+################################
+# read the csv file
+# df = pd.read_csv("TestThreshFolder/Test12.csv")
+# print(df)
+#################################
+# Just numbers so predlabel = label
+# FILE = "UpdatedTest3.csv"
+# df = pd.read_csv(FILE)
+# df["Label"] = df["PredClass"]
+# df.to_csv("PredictedCharactersTest3.csv", index=False)
+# df["Label"]
+
+# test = PreProcess(file=FILE, year=1959)
+# test.create_sheet_csv(num_of_sheets=75)
+df = pd.read_csv("Test3Folder/Test1.csv")
+df = df.apply(str)
 print(df)
-df.to_csv(f"Test{1}.csv", index=False)
