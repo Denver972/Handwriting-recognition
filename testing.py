@@ -10,6 +10,7 @@ import pandas as pd
 import cv2
 import os
 from pre_processing_test import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
+from char_data_augmentation import DataAugmentation
 # import fitz
 import timeit
 import time
@@ -386,6 +387,9 @@ FILE = "MW1959.pdf"
 
 # test = PreProcess(file=FILE, year=1959)
 # test.create_sheet_csv(num_of_sheets=75)
-df = pd.read_csv("Test3Folder/Test1.csv")
-df = df.apply(str)
-print(df)
+# df = pd.read_csv("Test3Folder/Test1.csv")
+# df = df.apply(str)
+# print(df)
+FILE = "Training5.csv"
+test = DataAugmentation(csv_file=FILE)
+test.all_augmentation(name="Training5DatasetAugmented.csv")
