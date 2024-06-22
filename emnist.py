@@ -24,10 +24,10 @@ else:
 
 
 # Prepare and load the data
-n_epochs = 600
+n_epochs = 800
 # batch_size_train = 100
 # batch_size_test = 100
-learning_rate = 0.001
+learning_rate = 0.0005
 momentum = 0.5
 log_interval = 10
 loss_NLL = torch.nn.NLLLoss()
@@ -62,7 +62,7 @@ torch.manual_seed(random_seed)
 #     batch_size=batch_size_test, shuffle=True)
 
 ###### Custom Dataset######
-data = pd.read_csv("./Training5.csv")
+data = pd.read_csv("./Training6DatasetAugmented.csv")
 
 # lbl = data.Label
 # # print(lbl)
@@ -99,7 +99,7 @@ class MWINPDataset(Dataset):
         # image = image.transpose()
         image = image*1.
         image -= image.min()
-        image = image/image.max()  # 102  # 51  # image.max() #10 # 25.5  # image.max()
+        image = image/255.0  # image.max()  # 102  # 51  # image.max() #10 # 25.5  # image.max()
         # print(image)
         # image.reshape(30, 30)
         image = np.expand_dims(image, axis=0)
@@ -131,7 +131,7 @@ class MWINPDataset(Dataset):
 #         return {'image': torch.from_numpy(image),
 #                 'landmarks': torch.from_numpy(characters)}
 
-custom_train_data = MWINPDataset("Training5.csv", "./")
+custom_train_data = MWINPDataset("Training6DatasetAugmented.csv", "./")
 custom_test_data = MWINPDataset("Testing5.csv", "./")
 # check if it has worked
 # for i, sample in enumerate(custom_train_data):
@@ -387,18 +387,18 @@ for epoch in range(1, n_epochs+1):
 
     print(
         f"epoch {epoch}, training_loss {output[0]}, validation_loss {output[1]}")
-    if valid_loss[epoch-1] < 0.3 and loss_difference > 0.05:
+    if valid_loss[epoch-1] < 1.0 and loss_difference > 0.5:
         break
 acc = accuracy(conv_model, custom_test_loader)
 print("Accuracy CNN: ", acc[0])
 print(f"Confusion matrix:\n{acc[1]}")
 
-torch.save(conv_model, "./Model8-SGDBatchRealData.pt")
+torch.save(conv_model, "./Model9-AugmentedTraining.pt")
 plt.plot(range(1, n_epochs+1), train_loss)
 plt.plot(range(1, n_epochs+1), valid_loss)
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
-plt.title("Loss aginst Epoch")
+plt.title("Loss aginst Epoch Model 9: Augmented Training")
 plt.legend(["Training", "Validation"])
-plt.savefig("Model8-SGD64batch.png")
+plt.savefig("Model9AugmentedTraining.png")
 plt.show()

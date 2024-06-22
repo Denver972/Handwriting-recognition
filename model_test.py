@@ -43,7 +43,7 @@ class MWINPDataset(Dataset):
         # image = image.transpose()
         image = image*1.
         image -= image.min()
-        image /= image.max()
+        image /= 255.0
         # image.reshape(30, 30)
         image = np.expand_dims(image, axis=0)
         # print(image.shape)
@@ -186,18 +186,18 @@ def predicted_values(model, data_loader):
     return predicted
 
 
-# conv_model = torch.load("./TestModelDigits.pt")
-# custom_test_data = MWINPDataset("1959CharactersTest3.csv", "./")
-# test_loader = DataLoader(custom_test_data, batch_size=1000000, shuffle=True)
+conv_model = torch.load("./Model9-AugmentedTraining.pt")
+custom_test_data = MWINPDataset("1959CharactersEarlyThreshold.csv", "./")
+test_loader = DataLoader(custom_test_data, batch_size=1000000, shuffle=True)
 
-# predict = predicted_values(conv_model, test_loader)
+predict = predicted_values(conv_model, test_loader)
 # print(predict)
 
-# df = pd.read_csv("1959CharactersEarlyThreshold.csv")
+df = pd.read_csv("1959CharactersEarlyThreshold.csv")
 
 
-# new_df = df.assign(PredClass=predict)
-# new_df.to_csv("PredictedEarlyThreshold.csv", index=False)
+new_df = df.assign(PredClass=predict)
+new_df.to_csv("PredictedEarlyThresholdAugmrntedTraining.csv", index=False)
 
 # acc = accuracy(conv_model, test_loader)
 # print("Accuracy CNN: ", acc[0])

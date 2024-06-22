@@ -390,6 +390,7 @@ FILE = "MW1959.pdf"
 # df = pd.read_csv("Test3Folder/Test1.csv")
 # df = df.apply(str)
 # print(df)
-FILE = "Training5.csv"
-test = DataAugmentation(csv_file=FILE)
-test.all_augmentation(name="Training5DatasetAugmented.csv")
+# Augmarntation
+# FILE = "Training6.csv"
+# test = DataAugmentation(csv_file=FILE)
+# test.all_augmentation(name="Training6DatasetAugmented.csv")

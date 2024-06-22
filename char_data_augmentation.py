@@ -55,13 +55,13 @@ class DataAugmentation():
         """
         df_erode = self.df.copy()
         df_erode["CharacterPath"] = df_erode["CharacterPath"].str.replace(
-            "skeleton", "thinned")
+            "binary", "thinned")
 
         for name in self.df["CharacterPath"]:
             image = np.array(cv.imread(name, 0))
             image_copy = image.copy()
             image_thin = cv.erode(image_copy, self.erode_kernel, iterations=1)
-            name = name.replace("skeleton", "thinned")
+            name = name.replace("binary", "thinned")
             cv.imwrite(name, image_thin)
 
         df_merged = pd.concat([self.df, df_erode])
@@ -76,14 +76,14 @@ class DataAugmentation():
         """
         df_dilate = self.df.copy()
         df_dilate["CharacterPath"] = df_dilate["CharacterPath"].str.replace(
-            "skeleton", "thickened")
+            "binary", "thickened")
 
         for name in self.df["CharacterPath"]:
             image = np.array(cv.imread(name, 0))
             image_copy = image.copy()
             image_thin = cv.dilate(
                 image_copy, self.dilate_kernel, iterations=1)
-            name = name.replace("skeleton", "thickened")
+            name = name.replace("binary", "thickened")
             cv.imwrite(name, image_thin)
 
         df_merged = pd.concat([self.df, df_dilate])
@@ -98,20 +98,20 @@ class DataAugmentation():
         """
         df_white_lines = self.df.copy()
         df_white_lines["CharacterPath"] = df_white_lines["CharacterPath"].str.replace(
-            "skeleton", "white_lines")
+            "binary", "white_lines")
 
         for name in self.df["CharacterPath"]:
             image = np.array(cv.imread(name, 0))
             image_copy = image.copy()
             # change only a maximum of 35% of the columns and rows
             rows, cols = image_copy.shape
-            row_sample = np.random.choice(math.floor(0.35*rows), 1)
-            col_sample = np.random.choice(math.floor(0.35*cols), 1)
+            row_sample = np.random.choice(math.floor(0.2*rows), 1)
+            col_sample = np.random.choice(math.floor(0.2*cols), 1)
             rows_changed = np.random.choice(rows, row_sample, replace=False)
             cols_changed = np.random.choice(cols, col_sample, replace=False)
             image_copy[rows_changed, :] = 255
             image_copy[:, cols_changed] = 255
-            name = name.replace("skeleton", "white_lines")
+            name = name.replace("binary", "white_lines")
             cv.imwrite(name, image_copy)
         df_merged = pd.concat([self.df, df_white_lines])
         df_merged.to_csv("CharDatasetWhiteLines.csv", index=False)
@@ -125,7 +125,7 @@ class DataAugmentation():
         """
         df_black_lines = self.df.copy()
         df_black_lines["CharacterPath"] = df_black_lines["CharacterPath"].str.replace(
-            "skeleton", "black_lines")
+            "binary", "black_lines")
 
         for name in self.df["CharacterPath"]:
             image = np.array(cv.imread(name, 0))
@@ -138,7 +138,7 @@ class DataAugmentation():
             cols_changed = np.random.choice(cols, col_sample, replace=False)
             image_copy[rows_changed, :] = 0
             image_copy[:, cols_changed] = 0
-            name = name.replace("skeleton", "black_lines")
+            name = name.replace("binary", "black_lines")
             cv.imwrite(name, image_copy)
         df_merged = pd.concat([self.df, df_black_lines])
         df_merged.to_csv("CharDatasetBlackLines.csv", index=False)
