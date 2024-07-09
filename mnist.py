@@ -14,7 +14,7 @@ import os
 from PIL import Image
 import numpy as np
 import pandas as pd
-from model_test import MWINPDataset
+# from model_test import MWINPDataset
 
 # Choose divice to run the program on. Default to CUDA because it is much
 # faster than the cpu
@@ -25,7 +25,7 @@ else:
 
 
 # Prepare and load the data
-n_epochs = 10
+n_epochs = 20
 batch_size_train = 100
 batch_size_test = 100
 learning_rate = 0.01
@@ -142,35 +142,35 @@ test_loader = torch.utils.data.DataLoader(
 # custom_test_loader = DataLoader(custom_test_data, batch_size=10, shuffle=True)
 
 
-# class GradientDescent():
-#     """
-#     A gradient descent optimizer.
-#     """
+class GradientDescent():
+    """
+    A gradient descent optimizer.
+    """
 
-#     def __init__(self,
-#                  parameters,
-#                  learning_rate):
-#         """
-#         Create a gradient descent optimizer.
+    def __init__(self,
+                 parameters,
+                 learning_rate):
+        """
+        Create a gradient descent optimizer.
 
-#         Arguments:
-#             parameters: Iterable providing the parameters to optimize.
-#             learning_rate: The learning rate to use for optimization.
-#         """
-#         self.parameters = list(parameters)
-#         self.learning_rate = learning_rate
+        Arguments:
+            parameters: Iterable providing the parameters to optimize.
+            learning_rate: The learning rate to use for optimization.
+        """
+        self.parameters = list(parameters)
+        self.learning_rate = learning_rate
 
-#     def zero_grad(self):
-#         for p in self.parameters:
-#             if not p.grad is None:
-#                 p.grad.zero_()
+    def zero_grad(self):
+        for p in self.parameters:
+            if not p.grad is None:
+                p.grad.zero_()
 
-#     def step(self):
-#         """
-#         Perform a gradient descent step on parameters associated to this optimizer.
-#         """
-#         for p in self.parameters:
-#             p.data.add_(p.grad, alpha=-self.learning_rate)
+    def step(self):
+        """
+        Perform a gradient descent step on parameters associated to this optimizer.
+        """
+        for p in self.parameters:
+            p.data.add_(p.grad, alpha=-self.learning_rate)
 
 
 class ConvModel(nn.Module):
@@ -185,13 +185,13 @@ class ConvModel(nn.Module):
         """
         super().__init__()
         self.input_features = input_features
-        self.conv1 = nn.Conv2d(input_features, 30, kernel_size=5, stride=1)
+        self.conv1 = nn.Conv2d(input_features, 28, kernel_size=5, stride=1)
         self.pool1 = nn.MaxPool2d(kernel_size=4, stride=4)
-        self.conv2 = nn.Conv2d(30, 60, kernel_size=4, stride=1)
+        self.conv2 = nn.Conv2d(28, 56, kernel_size=4, stride=1)
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.conv3 = nn.Conv2d(60, 120, kernel_size=1, stride=1)
+        self.conv3 = nn.Conv2d(56, 112, kernel_size=1, stride=1)
         self.pool3 = nn.MaxPool2d(kernel_size=1, stride=1)
-        self.fc_1 = nn.Linear(120, 10)
+        self.fc_1 = nn.Linear(112, 10)
 
     def forward(self, x):
         """
@@ -213,162 +213,162 @@ class ConvModel(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-# def train_epoch(training_loader,
-#                 validation_loader,
-#                 model,
-#                 loss,
-#                 optimizer,
-#                 device):
-#     """
-#     Again, this should be a useful docstring, but that would
-#     give away the answer for the exercise.
-#     """
+def train_epoch(training_loader,
+                validation_loader,
+                model,
+                loss,
+                optimizer,
+                device):
+    """
+    Again, this should be a useful docstring, but that would
+    give away the answer for the exercise.
+    """
 
-#     model.train()
-#     model.to(device)
+    model.train()
+    model.to(device)
 
-#     training_loss = 0.0
-#     n = len(training_loader)
-#     # print(training_loader[0])
-#     for i, (x, y) in enumerate(training_loader):
-#         # Set gradients to zero.
-#         optimizer.zero_grad()
+    training_loss = 0.0
+    n = len(training_loader)
+    # print(training_loader[0])
+    for i, (x, y) in enumerate(training_loader):
+        # Set gradients to zero.
+        optimizer.zero_grad()
 
-#         # check x,y types
+        # check x,y types
 
-#         # print(f"Batch {i} - x type: {type(x)}")
-#         # print(x.size())
-#         # print(f"Batch {i} - y type: {type(y)}")
-#         # print(y.size())
-#         # Move input to device
-#         x = x.to(device)
-#         y = y.to(device)
+        # print(f"Batch {i} - x type: {type(x)}")
+        # print(x.size())
+        # print(f"Batch {i} - y type: {type(y)}")
+        # print(y.size())
+        # Move input to device
+        x = x.to(device)
+        y = y.to(device)
 
-#         # Predict output, compute loss, perform optimizer step.
-#         y_pred = model(x)
+        # Predict output, compute loss, perform optimizer step.
+        y_pred = model(x)
 
-#         l = loss(y_pred, y)
+        l = loss(y_pred, y)
 
-#         l.backward()
+        l.backward()
 
-#         optimizer.step()
+        optimizer.step()
 
-#         training_loss += l.item()
-#         print("Batch ({} / {}): Loss {:.2f}".format(i, n, l.item()), end="\r")
+        training_loss += l.item()
+        print("Batch ({} / {}): Loss {:.2f}".format(i, n, l.item()), end="\r")
 
-#     training_loss /= n
+    training_loss /= n
 
-#     model.eval()
-#     validation_loss = 0.0
-#     n = len(validation_loader)
+    model.eval()
+    validation_loss = 0.0
+    n = len(validation_loader)
 
-#     for i, (x, y) in enumerate(validation_loader):
-#         # Move input to device
-#         # print(f"Batch {i} - x type: {type(x)}")
-#         # print(x.size())
-#         # print(f"Batch {i} - y type: {type(y)}")
-#         # print(y.size())
-#         x = x.to(device)
-#         y = y.to(device)
+    for i, (x, y) in enumerate(validation_loader):
+        # Move input to device
+        # print(f"Batch {i} - x type: {type(x)}")
+        # print(x.size())
+        # print(f"Batch {i} - y type: {type(y)}")
+        # print(y.size())
+        x = x.to(device)
+        y = y.to(device)
 
-#         # Predict output, compute loss, perform optimizer step.
+        # Predict output, compute loss, perform optimizer step.
 
-#         y_pred = model(x)
-#         l = loss(y_pred, y)
+        y_pred = model(x)
+        l = loss(y_pred, y)
 
-#         validation_loss += l.item()
-#     validation_loss /= n
+        validation_loss += l.item()
+    validation_loss /= n
 
-#     model.to(torch.device("cpu"))
+    model.to(torch.device("cpu"))
 
-#     return (training_loss, validation_loss)
-
-
-# def accuracy(model, validation_loader):
-#     model.eval()
-#     real = []
-#     predict = []
-#     correct = 0
-#     for i, (x, y) in enumerate(validation_loader):
-
-#         x = x.to(device)
-#         y = y.to(device)
-
-#         out = model(x)
-#         pred = out.data.max(1, keepdim=False)[1]
-#         correct += pred.eq(y.data.view_as(pred)).sum()
-
-#         real.append(y)
-#         predict.append(pred)
-
-#         # outputs = torch.sigmoid(outputs)
-#         # predict = (outputs).float()
-#         # print(predict)
-#         # targ.append(y.numpy())
-#         # for i in range(len(predict.tensor.detach().numpy())):
-#         #     pred.append(int(predict.tensor.detach().numpy()[i][0]))
-#     accu = 100. * correct / len(test_loader.dataset)
-#     # targets = np.concatenate(targ)
-#     print(real)
-#     print(predict)
-#     real = [r.numpy() for r in real]
-#     predict = [p.numpy() for p in predict]
-#     real = np.array(real, dtype=np.uint).flatten()
-#     predict = np.array(predict, dtype=np.uint).flatten()
-#     print(real)
-#     print(predict)
-#     conf_mat = metrics.confusion_matrix(
-#         real, predict, labels=np.arange(10))
-#     # fp = 0
-#     # tp = 0
-#     # tn = 0
-#     # fn = 0
-#     # for i in range(len(targets)):
-#     #     if targets[i] == pred[i]:
-#     #         tp += 1
-#     #     elif targets[i] != pred[i]:
-#     #         tn += 1
-
-#     # a = (tp + tn)/(fp + tp + tn + fn)
-#     # print(pred)
-#     return (accu, conf_mat)
+    return (training_loss, validation_loss)
 
 
-# train_loss = np.zeros(n_epochs)
-# valid_loss = np.zeros(n_epochs)
-# conv_model = ConvModel(input_features=1)
-# for epoch in range(1, n_epochs+1):
-#     # constant learning rate
-#     if epoch < 11:
-#         lr = learning_rate
-#     else:
-#         lr = learning_rate/10
+def accuracy(model, validation_loader):
+    model.eval()
+    real = []
+    predict = []
+    correct = 0
+    for i, (x, y) in enumerate(validation_loader):
 
-#     output = train_epoch(training_loader=train_loader,
-#                          validation_loader=test_loader,
-#                          model=conv_model,
-#                          loss=loss_NLL,
-#                          optimizer=GradientDescent(
-#                              parameters=conv_model.parameters(), learning_rate=lr),
-#                          device=device)
-#     train_loss[epoch-1] = output[0]
-#     valid_loss[epoch-1] = output[1]
+        x = x.to(device)
+        y = y.to(device)
 
-#     print(
-#         f"epoch {epoch}, training_loss {output[0]}, validation_loss {output[1]}")
+        out = model(x)
+        pred = out.data.max(1, keepdim=False)[1]
+        correct += pred.eq(y.data.view_as(pred)).sum()
 
-# a1 = accuracy(conv_model, test_loader)
-# print("Accuracy CNN: ", a1[0])
-# print("Confusion Matrix: \n", a1[1])
-# torch.save(conv_model, "./TestModelDigits3.pt")
-# plt.plot(range(1, n_epochs+1), train_loss)
-# plt.plot(range(1, n_epochs+1), valid_loss)
-# plt.xlabel("Epoch")
-# plt.ylabel("Loss")
-# plt.title("Loss aginst Epoch")
-# plt.legend(["Training", "Validation"])
-# plt.savefig("Model2.png")
-# plt.show()
+        real.append(y)
+        predict.append(pred)
+
+        # outputs = torch.sigmoid(outputs)
+        # predict = (outputs).float()
+        # print(predict)
+        # targ.append(y.numpy())
+        # for i in range(len(predict.tensor.detach().numpy())):
+        #     pred.append(int(predict.tensor.detach().numpy()[i][0]))
+    accu = 100. * correct / len(test_loader.dataset)
+    # targets = np.concatenate(targ)
+    print(real)
+    print(predict)
+    real = [r.numpy() for r in real]
+    predict = [p.numpy() for p in predict]
+    real = np.array(real, dtype=np.uint).flatten()
+    predict = np.array(predict, dtype=np.uint).flatten()
+    print(real)
+    print(predict)
+    conf_mat = metrics.confusion_matrix(
+        real, predict, labels=np.arange(10))
+    # fp = 0
+    # tp = 0
+    # tn = 0
+    # fn = 0
+    # for i in range(len(targets)):
+    #     if targets[i] == pred[i]:
+    #         tp += 1
+    #     elif targets[i] != pred[i]:
+    #         tn += 1
+
+    # a = (tp + tn)/(fp + tp + tn + fn)
+    # print(pred)
+    return (accu, conf_mat)
+
+
+train_loss = np.zeros(n_epochs)
+valid_loss = np.zeros(n_epochs)
+conv_model = ConvModel(input_features=1)
+for epoch in range(1, n_epochs+1):
+    # constant learning rate
+    if epoch < 11:
+        lr = learning_rate
+    else:
+        lr = learning_rate/10
+
+    output = train_epoch(training_loader=train_loader,
+                         validation_loader=test_loader,
+                         model=conv_model,
+                         loss=loss_NLL,
+                         optimizer=GradientDescent(
+                             parameters=conv_model.parameters(), learning_rate=lr),
+                         device=device)
+    train_loss[epoch-1] = output[0]
+    valid_loss[epoch-1] = output[1]
+
+    print(
+        f"epoch {epoch}, training_loss {output[0]}, validation_loss {output[1]}")
+
+a1 = accuracy(conv_model, test_loader)
+print("Accuracy CNN: ", a1[0])
+print("Confusion Matrix: \n", a1[1])
+torch.save(conv_model, "./MNISTModel.pt")
+plt.plot(range(1, n_epochs+1), train_loss)
+plt.plot(range(1, n_epochs+1), valid_loss)
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("Loss aginst Epoch")
+plt.legend(["Training", "Validation"])
+plt.savefig("ModelMNIST.png")
+plt.show()
 
 
 def predicted_values(model, data_loader):
@@ -389,15 +389,15 @@ def predicted_values(model, data_loader):
     return predicted
 
 
-conv_model = torch.load("TestModelDigits3.pt")
-custom_test_data = MWINPDataset("1959CharactersTest3.csv", "./")
-test_loader = DataLoader(custom_test_data, batch_size=1000000, shuffle=True)
+# conv_model = torch.load("TestModelDigits3.pt")
+# custom_test_data = MWINPDataset("1959CharactersTest3.csv", "./")
+# test_loader = DataLoader(custom_test_data, batch_size=1000000, shuffle=True)
 
-predict = predicted_values(conv_model, test_loader)
-print(predict)
+# predict = predicted_values(conv_model, test_loader)
+# print(predict)
 
-df = pd.read_csv("1959CharactersTest3.csv")
+# df = pd.read_csv("1959CharactersTest3.csv")
 
 
-new_df = df.assign(PredClass=predict)
-new_df.to_csv("PredictedCharactersTest3.csv", index=False)
+# new_df = df.assign(PredClass=predict)
+# new_df.to_csv("PredictedCharactersTest3.csv", index=False)

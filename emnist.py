@@ -102,6 +102,10 @@ class MWINPDataset(Dataset):
         image = image/255.0  # image.max()  # 102  # 51  # image.max() #10 # 25.5  # image.max()
         # print(image)
         # image.reshape(30, 30)
+        # need to find the meean of the images and standard deviation
+        # for now take from mnist dataset
+        image = (image - 0.1307)/(0.3081)
+
         image = np.expand_dims(image, axis=0)
         # print(image.shape)
         image = torch.tensor(image, dtype=torch.float32)
@@ -193,20 +197,20 @@ class ConvModel(nn.Module):
         """
         super().__init__()
         self.input_features = input_features
-        self.conv1 = nn.Conv2d(input_features, 30, kernel_size=5, stride=1)
+        self.conv1 = nn.Conv2d(input_features, 28, kernel_size=5, stride=1)
         self.pool1 = nn.MaxPool2d(kernel_size=4, stride=4)
-        self.conv15 = nn.Conv2d(30, 30, 3, 1)  # testing out this
+        self.conv15 = nn.Conv2d(28, 28, 3, 1)  # testing out this #28 to 30
         self.pool15 = nn.MaxPool2d(
             kernel_size=3, stride=1, padding=1)  # testing this out
-        self.conv2 = nn.Conv2d(30, 60, kernel_size=2, stride=1)
+        self.conv2 = nn.Conv2d(28, 56, kernel_size=2, stride=1)
         self.pool2 = nn.MaxPool2d(kernel_size=3, stride=2)
         # self.conv25 = nn.Conv2d(60, 60, 1, 4)  # test7
         # self.pool25 = nn.MaxPool2d(kernel_size=1, stride=1)  # test7
-        self.conv3 = nn.Conv2d(60, 120, kernel_size=1, stride=1)
+        self.conv3 = nn.Conv2d(56, 112, kernel_size=1, stride=1)
         self.pool3 = nn.MaxPool2d(kernel_size=1, stride=1)
         # self.conv4 = nn.Conv2d(120, 240, 1, 1)
         # self.pool4 = nn.MaxPool2d(1, 1)
-        self.fc_1 = nn.Linear(120, 18)
+        self.fc_1 = nn.Linear(112, 18)
         #
 
     def forward(self, x):
@@ -393,12 +397,12 @@ acc = accuracy(conv_model, custom_test_loader)
 print("Accuracy CNN: ", acc[0])
 print(f"Confusion matrix:\n{acc[1]}")
 
-torch.save(conv_model, "./Model9-AugmentedTraining.pt")
-plt.plot(range(1, n_epochs+1), train_loss)
-plt.plot(range(1, n_epochs+1), valid_loss)
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.title("Loss aginst Epoch Model 9: Augmented Training")
-plt.legend(["Training", "Validation"])
-plt.savefig("Model9AugmentedTraining.png")
-plt.show()
+# torch.save(conv_model, "./Model9-AugmentedTraining.pt")
+# plt.plot(range(1, n_epochs+1), train_loss)
+# plt.plot(range(1, n_epochs+1), valid_loss)
+# plt.xlabel("Epoch")
+# plt.ylabel("Loss")
+# plt.title("Loss aginst Epoch Model 9: Augmented Training")
+# plt.legend(["Training", "Validation"])
+# plt.savefig("Model9AugmentedTraining.png")
+# plt.show()

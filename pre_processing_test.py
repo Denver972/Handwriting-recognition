@@ -20,6 +20,7 @@ import pandas as pd
 import fitz_old
 from pypdf import PdfReader, PdfWriter
 from PIL import Image
+from scipy.signal import find_peaks
 
 
 class PreProcess():
@@ -858,6 +859,9 @@ class PreProcess():
             cv2.waitKey(1)
         return image_out
 
+    def thinning(self, path, show_images: bool = False):
+        pass
+
 
 class ImageRotation():
     """
@@ -1495,6 +1499,35 @@ class CharacterExtraction():
             rect = image[bound[1]:bound[1] +
                          bound[2], bound[0]:bound[0]+bound[3]]
             cv2.imwrite(f"test_cont_extract/word{ix}.png", rect)
+
+    def histogram(self, file, show_images: bool = False):
+        """
+        Reads in a binary word image
+        """
+
+        image = np.array(cv2.imread(file, 0))
+        # Thin the images so that the text is only one pixel thick
+        kernel_dilate = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        kernel_erode = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        image_dilate = cv2.dilate(image, kernel_dilate, iterations=3)
+        image_erode = cv2.erode(image_dilate, kernel_erode, iterations=3)
+        image_erode = image_erode/255
+        col_sums = np.sum(image_erode, axis=0)
+
+        # invert to then find maximum
+        col_sums = col_sums*-1
+        peaks, _ = find_peaks(col_sums, height=0)
+        print(peaks)
+        col_sums = col_sums*-1
+
+        if show_images:
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Thinned Image", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("Thinned Image", image_erode)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+        return col_sums, peaks
 
 
 class TableExtraction():

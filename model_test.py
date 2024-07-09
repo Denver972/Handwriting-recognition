@@ -73,20 +73,20 @@ class ConvModel(nn.Module):
         """
         super().__init__()
         self.input_features = input_features
-        self.conv1 = nn.Conv2d(input_features, 30, kernel_size=5, stride=1)
+        self.conv1 = nn.Conv2d(input_features, 28, kernel_size=5, stride=1)
         self.pool1 = nn.MaxPool2d(kernel_size=4, stride=4)
-        self.conv15 = nn.Conv2d(30, 30, 3, 1)  # testing out this
+        self.conv15 = nn.Conv2d(28, 28, 3, 1)  # testing out this #28 to 30
         self.pool15 = nn.MaxPool2d(
             kernel_size=3, stride=1, padding=1)  # testing this out
-        self.conv2 = nn.Conv2d(30, 60, kernel_size=2, stride=1)
+        self.conv2 = nn.Conv2d(28, 56, kernel_size=2, stride=1)
         self.pool2 = nn.MaxPool2d(kernel_size=3, stride=2)
         # self.conv25 = nn.Conv2d(60, 60, 1, 4)  # test7
         # self.pool25 = nn.MaxPool2d(kernel_size=1, stride=1)  # test7
-        self.conv3 = nn.Conv2d(60, 120, kernel_size=1, stride=1)
+        self.conv3 = nn.Conv2d(56, 112, kernel_size=1, stride=1)
         self.pool3 = nn.MaxPool2d(kernel_size=1, stride=1)
         # self.conv4 = nn.Conv2d(120, 240, 1, 1)
         # self.pool4 = nn.MaxPool2d(1, 1)
-        self.fc_1 = nn.Linear(120, 18)
+        self.fc_1 = nn.Linear(112, 18)
         #
 
     def forward(self, x):
@@ -187,17 +187,17 @@ def predicted_values(model, data_loader):
 
 
 conv_model = torch.load("./Model9-AugmentedTraining.pt")
-custom_test_data = MWINPDataset("1959CharactersEarlyThreshold.csv", "./")
+custom_test_data = MWINPDataset("1959CharactersTest3.csv", "./")
 test_loader = DataLoader(custom_test_data, batch_size=1000000, shuffle=True)
 
 predict = predicted_values(conv_model, test_loader)
 # print(predict)
 
-df = pd.read_csv("1959CharactersEarlyThreshold.csv")
+df = pd.read_csv("1959CharactersTest3.csv")
 
 
 new_df = df.assign(PredClass=predict)
-new_df.to_csv("PredictedEarlyThresholdAugmrntedTraining.csv", index=False)
+new_df.to_csv("CharactersTest3Model9Augmented.csv", index=False)
 
 # acc = accuracy(conv_model, test_loader)
 # print("Accuracy CNN: ", acc[0])

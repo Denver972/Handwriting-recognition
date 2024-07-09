@@ -15,6 +15,7 @@ from char_data_augmentation import DataAugmentation
 import timeit
 import time
 import torch
+import matplotlib.pyplot as plt
 
 FILE = "MW1959.pdf"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
@@ -146,8 +147,8 @@ FILE = "MW1959.pdf"
 # print(test["Class"].value_counts())
 # print(lbl)
 ######## Helper function to change labels to numbers and numbers to labels######
-# data = pd.read_csv("Testing4.csv")
-# print(data["Label"].unique())
+# df = pd.read_csv("CharactersTest3Model9Augmented.csv")
+# # print(data["Label"].unique())
 # classes = {
 #     "0": 0,
 #     "1": 1,
@@ -177,7 +178,7 @@ FILE = "MW1959.pdf"
 #     "H": 21
 # }
 # num_label = data["Label"].map(classes)
-# # print(num_label)
+# print(num_label)
 # data["Class"] = num_label
 # data.to_csv("Testing4.csv", index=False)
 # TODO: figure out how to invert correctly
@@ -185,7 +186,7 @@ FILE = "MW1959.pdf"
 # inv_classes = {v: k for k, v in classes.items()}
 # class_label = df["PredClass"].map(inv_classes)
 # df["Label"] = class_label
-# df.to_csv("PredictedEarlyThreshold.csv", index=False)
+# df.to_csv("CharactersTest3Model9Augmented.csv", index=False)
 
 # print(data.head())
 
@@ -256,7 +257,7 @@ FILE = "MW1959.pdf"
 # split into two at the row folder part
 
 # START OF SPLITING THE DATAFRAME
-# whole_data = pd.read_csv("PredictedEarlyThreshold.csv")
+# whole_data = pd.read_csv("CharactersTest3Model9Augmented.csv")
 # whole_data[["Root", "Year", "Sheet", "ColumnIndex", "RowIndex", "CharIndex"]
 #            ] = whole_data.CharacterPath.str.split("/", expand=True)
 # whole_data["CharIndex"] = whole_data["CharIndex"].str.replace("skeleton", "")
@@ -265,11 +266,11 @@ FILE = "MW1959.pdf"
 # whole_data["ColumnIndex"] = whole_data["ColumnIndex"].str.replace(
 #     "ColumnFolder", "")
 # whole_data["Sheet"] = whole_data["Sheet"].str.replace("Sheet", "")
-# whole_data["Year"] = whole_data["Year"].str.replace("Year_", "")
+# whole_data["Year"] = whole_data["Year"].str.replace("Test3Year_", "")
 
 # print(whole_data)
 # upd_data = whole_data.drop(["CharacterPath", "Root"], axis=1)
-# upd_data.to_csv("UpdatedEarlyThresh.csv", index=False)
+# upd_data.to_csv("UpdatedTest3Model9.csv", index=False)
 
 # END OF SPLITTING THE DATAFRAME
 
@@ -294,12 +295,12 @@ FILE = "MW1959.pdf"
 # want to fix the sheet and column index then merge the label column based on
 # its charIndex. For this introduce a new column CellText
 
-# df = pd.read_csv("UpdatedEarlyThresh.csv")
+# df = pd.read_csv("UpdatedTest3Model9.csv")
 # df = df.dropna(axis=0, subset="Label")
 # print(df)
 
 
-# # Sheet Number
+# # # Sheet Number
 # for sx in df["Sheet"].unique():
 #     # extract the number of columns in the sheet
 #     sheet_list = []
@@ -322,28 +323,47 @@ FILE = "MW1959.pdf"
 #             # print(row_df)
 #             # iterate through the characters
 #             # for char in cell_block["Label"]:
+#             # change label between pred class and label can remove str when the
+#             # the label is used ina column with characters and numbers
 #             for char in row_df["Label"]:
 #                 # append the character to the list
-#                 cell.append(char)
+#                 cell.append(str(char))
 #             # print the cell value
 #             value = "".join(cell)
 #             # print(f"{sx}, {cx}, {rx}")
 #             # print(value)
 #             sheet_list.append(sx)
-#             column_list.append(cx)
+#     # print(cell)
+#     for sx in sheet_df["Sheet"].unique():
+#         for cx in sheet_df["Column"].unique():
+#             col_df = sheet_df[sheet_df["Column"] == cx]
+#             # print(col_df)
+#             # print("New Column")
+#             for rx in col_df["Row"].unique():
+#                 row_df = col_df[col_df["Row"] == rx]
+#                 # print(row_df)
+#                 cell_value = row_df["Cell"].values
+#                 # sheet_df[(sheet_df["Column"] == cx)
+#                 #                       & (sheet_df["Row"] == rx)]["Cell"]
+#                 # print(cell_value)
+#                 # TODO: Update to work with pandas 3.0
+#                 df.loc[rx][cx] = cell_value
+#                 # df.loc[rx, f"{cx}"]
+#     # print(df)
+#     df.to_csv(f"Model9Results/Test{px}.csv", index=False)            column_list.append(cx)
 #             row_list.append(rx)
 #             cell_list.append(value)
 #             # Create new dataframe with the sheet, column, row and cell entry
 #             csv_dict = {"Sheet": sheet_list, "Column": column_list,
 #                         "Row": row_list, "Cell": cell_list}
 #             text_df = pd.DataFrame(csv_dict)
-#             text_df.to_csv(f"TestThreshFolder/Sheet{sx}.csv", index=False)
+#             text_df.to_csv(f"Model9Results/Sheet{sx}.csv", index=False)
 #####################################
 ############# TAKE LONG DATA AND CHANGE TO TABLE FORMAT############
 # Input: Sheet
 
 # for px in range(0, 75):
-#     sheet_df = pd.read_csv(f"TestThreshFolder/Sheet{px}.csv")
+#     sheet_df = pd.read_csv(f"Model9Results/Sheet{px}.csv")
 #     # get column indeces
 #     column_index = range(0, (max(sheet_df["Column"].unique())+1))
 #     # get row indeces
@@ -371,12 +391,12 @@ FILE = "MW1959.pdf"
 #                 df.loc[rx][cx] = cell_value
 #                 # df.loc[rx, f"{cx}"]
 #     # print(df)
-#     df.to_csv(f"TestThreshFolder/Test{px}.csv", index=False)
+#     df.to_csv(f"Model9Results/Test{px}.csv", index=False)
 
 ################################
 # read the csv file
-# df = pd.read_csv("TestThreshFolder/Test12.csv")
-# print(df)
+df = pd.read_csv("Model9Results/Test15.csv")
+print(df)
 #################################
 # Just numbers so predlabel = label
 # FILE = "UpdatedTest3.csv"
@@ -394,3 +414,12 @@ FILE = "MW1959.pdf"
 # FILE = "Training6.csv"
 # test = DataAugmentation(csv_file=FILE)
 # test.all_augmentation(name="Training6DatasetAugmented.csv")
+# Histogram to separate characters
+# FILE = "RowTest2Year_1959/Sheet1/ColumnFolder1/resized7.png"
+# test = CharacterExtraction()
+# hist, peak = test.histogram(FILE, show_images=True)
+# print(hist)
+# print(len(hist))
+# plt.plot(range(0, len(hist)), hist)
+# plt.plot(peak, hist[peak], "x")
+# plt.show()
