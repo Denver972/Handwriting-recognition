@@ -61,12 +61,12 @@ class PreProcess():
             print(page)
             pix = page.get_pixmap(dpi=300)
             pix.save(f"./PNGFolder2/Sheet{page.number}.png")
-            page_path = f"./RowTestYear_{self.year}/Sheet{page.number}"
+            page_path = f"./RowTest3Year_{self.year}/Sheet{page.number}"
             os.mkdir(page_path)
             # Save the rotated image in the page path with name Rotated_sheet
             rotated_path = os.path.join(page_path, "Rotated_sheet.png")
             cv.imwrite(rotated_path,
-                       self.rotate_image(path=f"./PNGFolder/Sheet{page.number}.png", show_images=False))
+                       self.rotate_image(path=f"./PNGFolder2/Sheet{page.number}.png", show_images=False))
             # Extract and save the table part
             table_path = os.path.join(page_path, "Table.png")
             crop_path = os.path.join(page_path, "CropTable.png")
@@ -144,10 +144,10 @@ class PreProcess():
         # Create the csv/dataframe to hold the character paths
         file_path_dict = {"CellPath": file_names}
         df = pd.DataFrame(file_path_dict)
-        df["Label"] = 0  # characters that are displayed in the image
-        df["Class"] = 0  # numerical label that coresponds to the character
+        df["Label"] = 0  # word that displayed in the image
+        df["Class"] = 0  # numerical label that coresponds to the word
         # df["PredClass"] = 0  # Predicted class by the model
-        df.to_csv(f"{self.year}RowTest2.csv", index=False)
+        df.to_csv(f"{self.year}RowTest3.csv", index=False)
 
     def rotate_image(self, path, show_images: bool = False):
         """
@@ -660,3 +660,31 @@ class PreProcess():
             resized_image = image.resize(
                 (goal_width, goal_height), resample=Image.Resampling.LANCZOS)
         return resized_image
+
+    def clean_image(self, path, show_images: bool = False):
+        """
+        Attempts to fill gaps of individual characters where the scanning has 
+        failed. The techniques used will be to blur the image, then take a 
+        threshold to convert back to binary.
+        INPUT: Resized image
+        OUTPUT: Cleaned image
+        """
+        image = np.array(cv.imread(path, 0))
+        image_copy = image.copy()
+        image_blurred = cv.GaussianBlur(image_copy, ksize=(5, 5), sigmaX=5,
+                                        sigmaY=5)
+        image_thresh = cv.threshold(
+            image_blurred, 175, 255, cv.THRESH_BINARY)[1]
+
+        if show_images:
+            cv.namedWindow("Input Image", cv.WINDOW_NORMAL)
+            cv.namedWindow("Blurred Image", cv.WINDOW_NORMAL)
+            cv.namedWindow("Threshold Image", cv.WINDOW_NORMAL)
+            cv.imshow("Input Image", image)
+            cv.imshow("Blurred Image", image_blurred)
+            cv.imshow("Threshold Image", image_thresh)
+            cv.waitKey()
+            cv.destroyAllWindows()
+            cv.waitKey(1)
+
+        return image_thresh

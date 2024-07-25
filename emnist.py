@@ -62,7 +62,7 @@ torch.manual_seed(random_seed)
 #     batch_size=batch_size_test, shuffle=True)
 
 ###### Custom Dataset######
-data = pd.read_csv("./Training6DatasetAugmented.csv")
+data = pd.read_csv("./Training5DatasetAugmented.csv")
 
 # lbl = data.Label
 # # print(lbl)
@@ -135,8 +135,8 @@ class MWINPDataset(Dataset):
 #         return {'image': torch.from_numpy(image),
 #                 'landmarks': torch.from_numpy(characters)}
 
-custom_train_data = MWINPDataset("Training6DatasetAugmented.csv", "./")
-custom_test_data = MWINPDataset("Testing5.csv", "./")
+custom_train_data = MWINPDataset("Training6.csv", "./")
+custom_test_data = MWINPDataset("Testing6.csv", "./")
 # check if it has worked
 # for i, sample in enumerate(custom_train_data):
 #     print(i, custom_train_data[0], custom_train_data[1])
@@ -402,7 +402,7 @@ print(f"Confusion matrix:\n{acc[1]}")
 # plt.plot(range(1, n_epochs+1), valid_loss)
 # plt.xlabel("Epoch")
 # plt.ylabel("Loss")
-# plt.title("Loss aginst Epoch Model 9: Augmented Training")
+# plt.title("Loss aginst Epoch Model 9")
 # plt.legend(["Training", "Validation"])
-# plt.savefig("Model9AugmentedTraining.png")
+# plt.savefig("Model9Training.png")
 # plt.show()

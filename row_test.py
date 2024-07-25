@@ -2,7 +2,7 @@
 # import pandas as pd
 # import timeit
 # import time
-# from row_pre_processing import PreProcess
+from row_pre_processing import PreProcess
 # from data_augmentation import DataAugmentation
 # from tokenizer import Tokenize
 
@@ -15,7 +15,7 @@
 # print(timeit.default_timer() - start_time)
 ################
 ### DATA AUGMENTATION###
-FILE = "RowDataset.csv"
+# FILE = "RowDataset.csv"
 # test = DataAugmentation(csv_file=FILE)
 # test.all_augmentation(name="RowDatasetAugmented.csv")
 #########################
@@ -29,3 +29,7 @@ FILE = "RowDataset.csv"
 # print(num)
 # test.create_csv("TestRow.csv")
 #########################
+### Smoothing###
+FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder1/resized16.png"
+test = PreProcess(file=FILE, year=1959)
+test.clean_image(path=FILE, show_images=True)

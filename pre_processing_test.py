@@ -860,7 +860,110 @@ class PreProcess():
         return image_out
 
     def thinning(self, path, show_images: bool = False):
-        pass
+        """
+        Thin the text to be 1 pixel thick
+        Input: Cell image
+        Output: Thinned cell image
+        """
+        image = path  # np.array(cv2.imread(path, 0))
+        image_copy = image.copy()
+        # Convert to binary
+        image_blur = cv2.GaussianBlur(image, ksize=(3, 3), sigmaX=15,
+                                      sigmaY=15)
+        thresh, image_thresh = cv2.threshold(
+            image_blur, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)
+        image_bin = cv2.threshold(
+            image_copy, thresh, 255, cv2.THRESH_BINARY)[1]
+        # fill in unwanted gaps
+        # image_dilate = cv2.dilate(
+        #     image_bin, kernel=self.char_kernel, iterations=1)
+        # image_erode = cv2.erode(
+        #     image_dilate, kernel=self.erosion_kernel, iterations=1)
+        image_thinned = cv2.ximgproc.thinning(src=image_bin,  # dst=image_thinned,
+                                              thinningType=cv2.ximgproc.THINNING_ZHANGSUEN)
+        if show_images:
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            # cv2.namedWindow("Binary Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Output Image", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            # cv2.imshow("Binary Image", image_erode)
+            cv2.imshow("Output Image", image_thinned)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return image_thinned
+
+    def segmentation(self, path, show_images: bool = False):
+        """
+        Technique to segment characters based on number of pixels in a column.
+        Two cases, 0 pixels, clear gap between characters, 1 pixel characters 
+        are connected.
+        Input: Thinned Image
+        Output: Array of column values representing the midpoints between characters
+        """
+        image = path  # np.array(cv2.imread(path, 0))
+        col_sums = np.sum(image, axis=0)
+        col_sums = col_sums/255
+        print(col_sums)
+        dims = np.shape(image)
+        black = np.zeros(dims, dtype=np.uint8)
+        potential_segments = np.zeros(dims, dtype=np.uint8)
+        empty_space_arr = []
+        for ix, csum in enumerate(col_sums):
+            if csum == 0:  # or csum == 1:
+                potential_segments[:, ix] = 255
+                empty_space_arr.append(ix)
+            else:
+                potential_segments[:, ix] = 0
+        print(empty_space_arr)
+        image_rgb = cv2.merge([image, potential_segments, black])
+        # find the midpoints of the areas that are adjacent
+        # first create list of sublists
+        list_of_sublists = []
+        sublist = [empty_space_arr[0]]
+        for ix in range(1, len(empty_space_arr)):
+            if empty_space_arr[ix] == empty_space_arr[ix-1] + 1:
+                sublist.append(empty_space_arr[ix])
+            else:
+                list_of_sublists.append(sublist)
+                sublist = [empty_space_arr[ix]]
+        list_of_sublists.append(sublist)
+        print(list_of_sublists)
+        # find length of each sublist
+        median_list = []
+        for sublist in list_of_sublists:
+            n = len(sublist)
+            # round down always ie take the left side of the median
+            mid_index = math.floor(n/2)
+            median_list.append(sublist[mid_index])
+        print(median_list)
+        if show_images:
+            cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("RGB Image", cv2.WINDOW_NORMAL)
+            # cv2.namedWindow("Output Image", cv2.WINDOW_NORMAL)
+            cv2.imshow("Input Image", image)
+            cv2.imshow("RGB Image", image_rgb)
+            # cv2.imshow("Output Image", image_thinned)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        return median_list
+
+    def split_image(self, path, median_list, show_images: bool = False):
+        """
+        Input: Image to split, list of columns to split on
+        Output: Images saved individually
+        """
+        image = path  # np.array(cv2.imread(path, 0))
+        med_list = median_list
+        for ix in range(len(med_list)-1):
+            image_char = image[:, med_list[ix]:med_list[ix+1]]
+            if show_images:
+                cv2.namedWindow("Character Image", cv2.WINDOW_NORMAL)
+                cv2.imshow("Character Image", image_char)
+                cv2.waitKey()
+                cv2.destroyAllWindows()
+                cv2.waitKey(1)
 
 
 class ImageRotation():

@@ -17,6 +17,8 @@ import time
 import torch
 import matplotlib.pyplot as plt
 
+from row_pre_processing import PreProcess as rowPreProcess
+
 FILE = "MW1959.pdf"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
 
@@ -395,8 +397,8 @@ FILE = "MW1959.pdf"
 
 ################################
 # read the csv file
-df = pd.read_csv("Model9Results/Test15.csv")
-print(df)
+# df = pd.read_csv("Model9Results/Test15.csv")
+# print(df)
 #################################
 # Just numbers so predlabel = label
 # FILE = "UpdatedTest3.csv"
@@ -423,3 +425,14 @@ print(df)
 # plt.plot(range(0, len(hist)), hist)
 # plt.plot(peak, hist[peak], "x")
 # plt.show()
+######### Thinned Image############
+# FILE = "./Year_NoSmall1959/Sheet1/ColumnFolder2/row8.png"
+# 10 16 38
+FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
+row_test = rowPreProcess(FILE, year=1959)
+clean = row_test.clean_image(FILE, show_images=True)
+test = PreProcess(FILE, year=1959)
+thinned = test.thinning(clean, show_images=True)
+# print(np.shape(thinned))
+median = test.segmentation(thinned, show_images=True)
+test.split_image(clean, median, show_images=True)
