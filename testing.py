@@ -428,11 +428,17 @@ FILE = "MW1959.pdf"
 ######### Thinned Image############
 # FILE = "./Year_NoSmall1959/Sheet1/ColumnFolder2/row8.png"
 # 10 16 38
-FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
-row_test = rowPreProcess(FILE, year=1959)
-clean = row_test.clean_image(FILE, show_images=True)
+# FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
+# row_test = rowPreProcess(FILE, year=1959)
+# clean = row_test.clean_image(FILE, show_images=True)
+# test = PreProcess(FILE, year=1959)
+# thinned = test.thinning(clean, show_images=True)
+# # print(np.shape(thinned))
+# median = test.segmentation(thinned, show_images=True)
+# test.split_image(clean, median, show_images=True)
+
+
+######### Show contours##########
+FILE = "Year_EarlyThreshold1959/Sheet14/Work/column1.png"
 test = PreProcess(FILE, year=1959)
-thinned = test.thinning(clean, show_images=True)
-# print(np.shape(thinned))
-median = test.segmentation(thinned, show_images=True)
-test.split_image(clean, median, show_images=True)
+test.row_extract(path=FILE, show_images=True)
