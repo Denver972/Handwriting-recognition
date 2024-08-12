@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 # from skimage import io, transform
 from sklearn import metrics
 import matplotlib.pyplot as plt
-# from PIL import Image
+from PIL import Image
 import numpy as np
 import pandas as pd
 
@@ -396,6 +396,14 @@ for epoch in range(1, n_epochs+1):
 acc = accuracy(conv_model, custom_test_loader)
 print("Accuracy CNN: ", acc[0])
 print(f"Confusion matrix:\n{acc[1]}")
+character_categories = list(range(0, 18))
+plt.imshow(acc[1], "Blues", vmax=0.5)
+
+plt.xticks(range(46), labels=character_categories) #change to 46
+plt.yticks(range(46), labels=character_categories)
+plt.title("Test Confusion Matrix")
+plt.show()
+
 
 # torch.save(conv_model, "./Model9-AugmentedTraining.pt")
 # plt.plot(range(1, n_epochs+1), train_loss)

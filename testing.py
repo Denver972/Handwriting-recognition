@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import cv2
 import os
-from pre_processing_test import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
+# from pre_processing_test import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
 from char_data_augmentation import DataAugmentation
 # import fitz
 import timeit
@@ -17,7 +17,7 @@ import time
 import torch
 import matplotlib.pyplot as plt
 
-from row_pre_processing import PreProcess as rowPreProcess
+#  from row_pre_processing import PreProcess as rowPreProcess
 
 FILE = "MW1959.pdf"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
@@ -428,11 +428,43 @@ FILE = "MW1959.pdf"
 ######### Thinned Image############
 # FILE = "./Year_NoSmall1959/Sheet1/ColumnFolder2/row8.png"
 # 10 16 38
-FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
-row_test = rowPreProcess(FILE, year=1959)
-clean = row_test.clean_image(FILE, show_images=True)
-test = PreProcess(FILE, year=1959)
-thinned = test.thinning(clean, show_images=True)
-# print(np.shape(thinned))
-median = test.segmentation(thinned, show_images=True)
-test.split_image(clean, median, show_images=True)
+# FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
+# row_test = rowPreProcess(FILE, year=1959)
+# clean = row_test.clean_image(FILE, show_images=True)
+# test = PreProcess(FILE, year=1959)
+# thinned = test.thinning(clean, show_images=True)
+# # print(np.shape(thinned))
+# median = test.segmentation(thinned, show_images=True)
+# test.split_image(clean, median, show_images=True)
+
+###Test smoothed Image
+def smoothing(file, show_images: bool = False):
+    """
+    Take in a character and make neew image with it being smoothed
+    like with emnist
+    """
+    image = np.array(cv2.imread(file, 0))
+    image_copy = image.copy()
+    image_blur = cv2.GaussianBlur(image_copy, ksize=(3, 3), sigmaX=5,
+                                      sigmaY=5)
+
+    if show_images:
+        cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+        cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+        cv2.imshow("Input Image", image)
+        cv2.imshow("Blurred Image", image_blur)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+
+    return image_blur
+
+FILE = "./Win1Year_1959/Sheet0/ColumnFolder1/RowFolder10/skeleton1.png"
+smoothing(file=FILE, show_images=True)
+
+master = pd.read_csv("Win1EMNISTtest.csv")
+
+for ix, name in enumerate(master["CharacterPath"]):
+    temp = smoothing(file=name)
+    new_name = name.replace("skeleton", "smooth")
+    cv2.imwrite(new_name, temp)

@@ -61,7 +61,7 @@ class PreProcess():
         """
         # Step 1: Create the higher level folders
         png_path = "./PNGFolder"
-        year_path = f"./Test3Year_{self.year}"
+        year_path = f"./Win1Year_{self.year}"
         os.mkdir(png_path)
         os.mkdir(year_path)
         input_pdf = fitz_old.open(self.file)
@@ -73,7 +73,7 @@ class PreProcess():
             print(page)
             pix = page.get_pixmap(dpi=300)
             pix.save(f"./PNGFolder/Sheet{page.number}.png")
-            page_path = f"./Test3Year_{self.year}/Sheet{page.number}"
+            page_path = f"./Win1Year_{self.year}/Sheet{page.number}"
             os.mkdir(page_path)
             # Save the rotated image in the page path with name Rotated_sheet
             rotated_path = os.path.join(page_path, "Rotated_sheet.png")
