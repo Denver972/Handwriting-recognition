@@ -7,9 +7,9 @@ Testing file
 """
 import numpy as np
 import pandas as pd
-import cv2
+import cv2 as cv
 import os
-# from pre_processing_test import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
+from pre_processing_test import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
 from char_data_augmentation import DataAugmentation
 # import fitz
 import timeit
@@ -259,7 +259,7 @@ FILE = "MW1959.pdf"
 # split into two at the row folder part
 
 # START OF SPLITING THE DATAFRAME
-# whole_data = pd.read_csv("CharactersTest3Model9Augmented.csv")
+# whole_data = pd.read_csv("RowDataset.csv")
 # whole_data[["Root", "Year", "Sheet", "ColumnIndex", "RowIndex", "CharIndex"]
 #            ] = whole_data.CharacterPath.str.split("/", expand=True)
 # whole_data["CharIndex"] = whole_data["CharIndex"].str.replace("skeleton", "")
@@ -276,6 +276,22 @@ FILE = "MW1959.pdf"
 
 # END OF SPLITTING THE DATAFRAME
 
+
+# whole_data = pd.read_csv("RowDataset.csv")
+# whole_data[["Root", "Year", "Sheet", "ColumnIndex", "RowIndex"]
+#            ] = whole_data.CellPath.str.split("/", expand=True)
+# # whole_data["CharIndex"] = whole_data["CharIndex"].str.replace("skeleton", "")
+# # whole_data["CharIndex"] = whole_data["CharIndex"].str.replace(".png", "")
+# whole_data["RowIndex"] = whole_data["RowIndex"].str.replace("resized", "")
+# whole_data["RowIndex"] = whole_data["RowIndex"].str.replace(".png", "")
+# whole_data["ColumnIndex"] = whole_data["ColumnIndex"].str.replace(
+#     "ColumnFolder", "")
+# whole_data["Sheet"] = whole_data["Sheet"].str.replace("Sheet", "")
+# whole_data["Year"] = whole_data["Year"].str.replace("Test3Year_", "")
+
+# print(whole_data)
+# upd_data = whole_data.drop(["CellPath", "Root"], axis=1)
+# upd_data.to_csv("Updated_row.csv", index=False)
 
 ############## EXTRACT ONE CELL############
 
@@ -395,6 +411,38 @@ FILE = "MW1959.pdf"
 #     # print(df)
 #     df.to_csv(f"Model9Results/Test{px}.csv", index=False)
 
+# sheet_df = pd.read_csv("Updated_row.csv")
+# sheet_chosen = sheet_df[sheet_df["Sheet"] == 61]
+# # get column indeces
+# column_index = range(0, (max(sheet_chosen["Column"].unique())+1))
+# # get row indeces
+# row_index = range(0, (max(sheet_chosen["Row"].unique())+1))
+# # print(row_index[1])
+# df = pd.DataFrame(index=row_index, columns=column_index)
+# # df = pd.DataFrame(index=row_index)
+# # cell = sheet_df.loc[0].at["Cell"]
+# # sheet_df[(sheet_df["Column"] == 0)
+# #                 & (sheet_df["Row"] == 1)]["Cell"]
+# # print(cell)
+# for sx in sheet_chosen["Sheet"].unique():
+#     for cx in sheet_chosen["Column"].unique():
+#         col_df = sheet_chosen[sheet_chosen["Column"] == cx]
+#         # print(col_df)
+#         # print("New Column")
+#         for rx in col_df["Row"].unique():
+#             row_df = col_df[col_df["Row"] == rx]
+#             # print(row_df)
+#             cell_value = row_df["Cell"].values
+#             # sheet_df[(sheet_df["Column"] == cx)
+#             #                       & (sheet_df["Row"] == rx)]["Cell"]
+#             # print(cell_value)
+#             # TODO: Update to work with pandas 3.0
+#             df.loc[rx][cx] = cell_value
+#             # df.loc[rx, f"{cx}"]
+# # print(df)
+# df.to_csv("True_sheet61.csv", index=False)
+
+
 ################################
 # read the csv file
 # df = pd.read_csv("Model9Results/Test15.csv")
@@ -428,46 +476,62 @@ FILE = "MW1959.pdf"
 ######### Thinned Image############
 # FILE = "./Year_NoSmall1959/Sheet1/ColumnFolder2/row8.png"
 # 10 16 38
-FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
-row_test = rowPreProcess(FILE, year=1959)
-clean = row_test.clean_image(FILE, show_images=True)
-test = PreProcess(FILE, year=1959)
-thinned = test.thinning(clean, show_images=True)
-# print(np.shape(thinned))
-median = test.segmentation(thinned, show_images=True)
-test.split_image(clean, median, show_images=True)
+# FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
+# row_test = rowPreProcess(FILE, year=1959)
+# clean = row_test.clean_image(FILE, show_images=True)
+# test = PreProcess(FILE, year=1959)
+# thinned = test.thinning(clean, show_images=True)
+# # print(np.shape(thinned))
+# median = test.segmentation(thinned, show_images=True)
+# test.split_image(clean, median, show_images=True)
 
 # Test smoothed Image
 
 
-def smoothing(file, show_images: bool = False):
-    """
-    Take in a character and make neew image with it being smoothed
-    like with emnist
-    """
-    image = np.array(cv2.imread(file, 0))
-    image_copy = image.copy()
-    image_blur = cv2.GaussianBlur(image_copy, ksize=(3, 3), sigmaX=5,
-                                  sigmaY=5)
+# def smoothing(file, show_images: bool = False):
+#     """
+#     Take in a character and make neew image with it being smoothed
+#     like with emnist
+#     """
+#     image = np.array(cv2.imread(file, 0))
+#     image_copy = image.copy()
+#     image_blur = cv2.GaussianBlur(image_copy, ksize=(3, 3), sigmaX=5,
+#                                   sigmaY=5)
 
-    if show_images:
-        cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
-        cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
-        cv2.imshow("Input Image", image)
-        cv2.imshow("Blurred Image", image_blur)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)
+#     if show_images:
+#         cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
+#         cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
+#         cv2.imshow("Input Image", image)
+#         cv2.imshow("Blurred Image", image_blur)
+#         cv2.waitKey()
+#         cv2.destroyAllWindows()
+#         cv2.waitKey(1)
 
-    return image_blur
+#     return image_blur
 
 
-FILE = "./Win1Year_1959/Sheet0/ColumnFolder1/RowFolder10/skeleton1.png"
-smoothing(file=FILE, show_images=True)
+# FILE = "./Win1Year_1959/Sheet0/ColumnFolder1/RowFolder10/skeleton1.png"
+# smoothing(file=FILE, show_images=True)
 
-master = pd.read_csv("Win1EMNISTtest.csv")
+# master = pd.read_csv("Win1EMNISTtest.csv")
 
-for ix, name in enumerate(master["CharacterPath"]):
-    temp = smoothing(file=name)
-    new_name = name.replace("skeleton", "smooth")
-    cv2.imwrite(new_name, temp)
+# for ix, name in enumerate(master["CharacterPath"]):
+#     temp = smoothing(file=name)
+#     new_name = name.replace("skeleton", "smooth")
+#     cv2.imwrite(new_name, temp)
+
+
+# img1 = cv.imread("column1.png")
+# img2 = cv.imread("thresh_col.png")
+# img3 = cv.imread("dil_col.png")
+# img4 = cv.imread("con_col.png")
+
+# row = np.concatenate((img1, img2, img3, img4), axis=1)
+# cv.imwrite("ColumnProcess.png", row)
+# cv.imshow("Table", row)
+# cv.waitKey(0)
+# cv.destroyAllWindows()
+# Contour demonstration
+FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder1/row3.png"  # 8,16,38,3
+test = CharacterExtraction()
+test.char_locate(file=FILE, show_images=True)

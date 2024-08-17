@@ -1506,9 +1506,7 @@ class WordExtraction():
 
 class CharacterExtraction():
     """
-    Extract the characters from the image, resize them to make them
-    uniform, save them as individual images
-    INPUT: Pre-processed image
+    Extract the characters from the image
     """
 
     def __init__(self):
@@ -1557,7 +1555,6 @@ class CharacterExtraction():
         # for ix, cont in enumerate(contours):
         #     # rect_cont[ix] = cv2.minAreaRect(cont)
         #     min_rect_contour[ix] = np.int0(cv2.boxPoints(cont))
-
         if show_images:
             # min_rect_contour = np.int0(cv2.boxPoints(min_area_rect))
             # temp1 = cv2.drawContours(
@@ -1565,6 +1562,7 @@ class CharacterExtraction():
             for ix, cont in enumerate(contours):
                 temp1 = cv2.rectangle(image_colour, (x[ix], y[ix]),
                                       (x[ix]+w[ix], y[ix]+h[ix]), (0, 255, 0), 2)
+            cv2.imwrite("Contour_test4.png", temp1)
             cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Blurred Image", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Threshold Image", cv2.WINDOW_NORMAL)

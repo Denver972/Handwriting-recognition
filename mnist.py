@@ -318,7 +318,7 @@ def accuracy(model, validation_loader):
     print(real)
     print(predict)
     conf_mat = metrics.confusion_matrix(
-        real, predict, labels=np.arange(10))
+        real, predict, labels=np.arange(10), normalize="true")
     # fp = 0
     # tp = 0
     # tn = 0
@@ -360,7 +360,16 @@ for epoch in range(1, n_epochs+1):
 a1 = accuracy(conv_model, test_loader)
 print("Accuracy CNN: ", a1[0])
 print("Confusion Matrix: \n", a1[1])
-torch.save(conv_model, "./MNISTModel.pt")
+
+character_categories = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+plt.imshow(a1[1], "Blues", vmax=0.5)
+
+plt.xticks(range(10), labels=character_categories)  # change to 46
+plt.yticks(range(10), labels=character_categories)
+plt.title("Test Confusion Matrix")
+plt.show()
+
+# torch.save(conv_model, "./MNISTModel.pt")
 plt.plot(range(1, n_epochs+1), train_loss)
 plt.plot(range(1, n_epochs+1), valid_loss)
 plt.xlabel("Epoch")

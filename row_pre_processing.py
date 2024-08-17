@@ -212,7 +212,7 @@ class PreProcess():
                 image_copy.copy(), contours, -1, (255, 0, 0), 2)
             temp2 = cv.drawContours(
                 image_copy.copy(), [min_rect_contour], -1, (255, 0, 0), 2)
-            cv.namedWindow("Greyed imagage", cv.WINDOW_NORMAL)
+            cv.namedWindow("Greyed image", cv.WINDOW_NORMAL)
             cv.namedWindow("Blurred image", cv.WINDOW_NORMAL)
             cv.namedWindow("Threshold image", cv.WINDOW_NORMAL)
             cv.namedWindow("Dilated image", cv.WINDOW_NORMAL)

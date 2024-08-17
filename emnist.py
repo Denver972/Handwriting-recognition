@@ -135,7 +135,7 @@ class MWINPDataset(Dataset):
 #         return {'image': torch.from_numpy(image),
 #                 'landmarks': torch.from_numpy(characters)}
 
-custom_train_data = MWINPDataset("Training6.csv", "./")
+custom_train_data = MWINPDataset("Training6DatasetAugmented.csv", "./")
 custom_test_data = MWINPDataset("Testing6.csv", "./")
 # check if it has worked
 # for i, sample in enumerate(custom_train_data):
@@ -347,7 +347,7 @@ def accuracy(model, validation_loader):
     print(real)
     print(predict)
     conf_mat = metrics.confusion_matrix(
-        real, predict, labels=np.arange(17))
+        real, predict, labels=np.arange(17), normalize="true")
     # 14 for dataset 3
     # 18 for dataset4
     # 2 for dataset5
@@ -396,11 +396,12 @@ for epoch in range(1, n_epochs+1):
 acc = accuracy(conv_model, custom_test_loader)
 print("Accuracy CNN: ", acc[0])
 print(f"Confusion matrix:\n{acc[1]}")
-character_categories = list(range(0, 18))
+character_categories = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+                        "m", ".", "-", "+", "c", "'", "w"]
 plt.imshow(acc[1], "Blues", vmax=0.5)
 
-plt.xticks(range(46), labels=character_categories) #change to 46
-plt.yticks(range(46), labels=character_categories)
+plt.xticks(range(17), labels=character_categories)  # change to 46
+plt.yticks(range(17), labels=character_categories)
 plt.title("Test Confusion Matrix")
 plt.show()
 

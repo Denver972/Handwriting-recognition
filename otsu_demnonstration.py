@@ -48,11 +48,16 @@ class HistogramCreation():
         # blur_hist = np.histogram(blur_arr, bins=255)
         plt.hist(im_arr, bins=255)
         plt.axvline(x=no_bl, color="red")
+        plt.title("Pixel Frequency Without Blurring")
         plt.show()
         plt.hist(blur_arr, bins=255)
         plt.axvline(x=image_thresh_temp, color="red")
+        plt.title("Pixel Frequency With Blurring")
         plt.show()
 
+        # cv.imwrite("OtsuOriginal2.png", image_grey)
+        # cv.imwrite("OtsuNoBlur2.png", image_thresh_no_blur)
+        # cv.imwrite("OtsuBlur2.png", image_thresh)
         if show_images:
             cv.namedWindow("Original Image", cv.WINDOW_NORMAL)
             cv.namedWindow("No Blur Threshold", cv.WINDOW_NORMAL)
@@ -68,6 +73,22 @@ class HistogramCreation():
             cv.waitKey(1)
 
 
-FILE = "./PNGFolder/Sheet14.png"
+# FILE = "./PNGFolder/Sheet14.png"
+FILE = "./RowTestYear_1959/Sheet0/ColumnFolder1/row30.png"
 test = HistogramCreation(FILE)
-test.histogram(show_images=False)
+test.histogram(show_images=True)
+# Combine images
+# img1 = cv.imread("OtsuOriginal1.png")
+# img2 = cv.imread("OtsuNoblur1.png")
+# img3 = cv.imread("OtsuBlur1.png")
+# img4 = cv.imread("OtsuOriginal2.png")
+# img5 = cv.imread("OtsuNoblur2.png")
+# img6 = cv.imread("OtsuBlur2.png")
+
+# row1 = np.concatenate((img1, img2, img3), axis=1)
+# row2 = np.concatenate((img4, img5, img6), axis=1)
+# tab = np.concatenate((row1, row2), axis=0)
+# cv.imwrite("OtsuExample.png", tab)
+# cv.imshow("Table", tab)
+# cv.waitKey(0)
+# cv.destroyAllWindows()
