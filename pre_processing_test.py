@@ -937,6 +937,7 @@ class PreProcess():
             mid_index = math.floor(n/2)
             median_list.append(sublist[mid_index])
         print(median_list)
+        cv2.imwrite("hist_test4.png", image_rgb)
         if show_images:
             cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
             cv2.namedWindow("RGB Image", cv2.WINDOW_NORMAL)

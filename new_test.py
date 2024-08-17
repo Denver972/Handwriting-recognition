@@ -39,15 +39,15 @@ col_names = ["Time EST.", "No. of Nuclei (per box, beam, cc)",
              "Pres wx (ww)", "Vis. (ft, mi.)", "Wind Dir.",
              "Wind Speed (mph)", "Cloud amount (tenths)",
              "Cloud Types (all)", "Cloud est ht (ft. over sta.)",
-             "Rel. Hum. (%)"]  # , "Observer"]
+             "Rel. Hum. (%)", "Observer"]
 times = ["0100", "0300", "0700", "1000", "1300", "1600", "1900", "2200"]
 times_series = pd.Series(times)
 
 
-df = pd.read_csv("True_sheet61.csv")
+df = pd.read_csv("True_sheet0.csv")
 df.columns = col_names
 df["Time EST."] = np.resize(times_series, df.shape[0])
-df.to_html("True_sheet61.htm")
+df.to_html("True_sheet0.htm")
 # Numbers only csv
 # df = pd.read_csv("Dataset5.csv")
 # number_df = df[df["Number"] == 0]

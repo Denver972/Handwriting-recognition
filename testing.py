@@ -5,19 +5,19 @@
 """
 Testing file
 """
+from row_pre_processing import PreProcess as rowPreProcess
+import matplotlib.pyplot as plt
+import torch
+import time
+import timeit
 import numpy as np
 import pandas as pd
 import cv2 as cv
 import os
 from pre_processing_test import FileSeparation, ImageRotation, TableDetect, WordExtraction, ColumnExtraction, TableExtraction, RowExtraction, CharacterExtraction, FileConstructor, PreProcess
 from char_data_augmentation import DataAugmentation
+from row_pre_processing import PreProcess as rowPreProcess
 # import fitz
-import timeit
-import time
-import torch
-import matplotlib.pyplot as plt
-
-#  from row_pre_processing import PreProcess as rowPreProcess
 
 FILE = "MW1959.pdf"
 # FILE = "Handwriting-recognition/temp/grid2_test.png"
@@ -476,7 +476,7 @@ FILE = "MW1959.pdf"
 ######### Thinned Image############
 # FILE = "./Year_NoSmall1959/Sheet1/ColumnFolder2/row8.png"
 # 10 16 38
-# FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder10/resized7.png"
+# FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder1/resized3.png"
 # row_test = rowPreProcess(FILE, year=1959)
 # clean = row_test.clean_image(FILE, show_images=True)
 # test = PreProcess(FILE, year=1959)
