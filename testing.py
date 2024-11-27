@@ -5,7 +5,7 @@
 """
 Testing file
 """
-from row_pre_processing import PreProcess as rowPreProcess
+# from row_pre_processing import PreProcess as rowPreProcess
 import matplotlib.pyplot as plt
 import torch
 import time
@@ -475,15 +475,15 @@ FILE = "MW1959.pdf"
 # plt.show()
 ######### Thinned Image############
 # FILE = "./Year_NoSmall1959/Sheet1/ColumnFolder2/row8.png"
-# 10 16 38
-# FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder1/resized3.png"
-# row_test = rowPreProcess(FILE, year=1959)
-# clean = row_test.clean_image(FILE, show_images=True)
-# test = PreProcess(FILE, year=1959)
-# thinned = test.thinning(clean, show_images=True)
-# # print(np.shape(thinned))
-# median = test.segmentation(thinned, show_images=True)
-# test.split_image(clean, median, show_images=True)
+# 10 16 38 3 8
+FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder1/resized3.png"
+row_test = rowPreProcess(FILE, year=1959)
+clean = row_test.clean_image(FILE, show_images=True)
+test = PreProcess(FILE, year=1959)
+thinned = test.thinning(clean, show_images=True)
+# print(np.shape(thinned))
+median = test.segmentation(thinned, show_images=True)
+test.split_image(clean, median, show_images=True)
 
 # Test smoothed Image
 
@@ -532,6 +532,6 @@ FILE = "MW1959.pdf"
 # cv.waitKey(0)
 # cv.destroyAllWindows()
 # Contour demonstration
-FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder1/row3.png"  # 8,16,38,3
-test = CharacterExtraction()
-test.char_locate(file=FILE, show_images=True)
+# FILE = "./RowTest2Year_1959/Sheet1/ColumnFolder1/row3.png"  # 8,16,38,3
+# test = CharacterExtraction()
+# test.char_locate(file=FILE, show_images=True)

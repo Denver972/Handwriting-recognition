@@ -40,7 +40,7 @@ col_names = ["Time EST.", "No. of Nuclei (per box, beam, cc)",
              "Wind Speed (mph)", "Cloud amount (tenths)",
              "Cloud Types (all)", "Cloud est ht (ft. over sta.)",
              "Rel. Hum. (%)", "Observer"]
-times = ["0100", "0300", "0700", "1000", "1300", "1600", "1900", "2200"]
+times = ["0100", "0400", "0700", "1000", "1300", "1600", "1900", "2200"]
 times_series = pd.Series(times)
 
 

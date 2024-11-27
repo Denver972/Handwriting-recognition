@@ -916,7 +916,13 @@ class PreProcess():
             else:
                 potential_segments[:, ix] = 0
         print(empty_space_arr)
-        image_rgb = cv2.merge([image, potential_segments, black])
+        # image_rgb = cv2.merge([image, potential_segments, black])
+        # image_temp = cv2.merge([black, potential_segments, image])
+        # image_text = cv2.merge([image, image, image])
+        image_rgb = cv2.merge([np.maximum(image, black),
+                               np.maximum(image, potential_segments),
+                               np.maximum(image, black)])
+
         # find the midpoints of the areas that are adjacent
         # first create list of sublists
         list_of_sublists = []
@@ -928,7 +934,7 @@ class PreProcess():
                 list_of_sublists.append(sublist)
                 sublist = [empty_space_arr[ix]]
         list_of_sublists.append(sublist)
-        print(list_of_sublists)
+        # print(list_of_sublists)
         # find length of each sublist
         median_list = []
         for sublist in list_of_sublists:
@@ -936,7 +942,9 @@ class PreProcess():
             # round down always ie take the left side of the median
             mid_index = math.floor(n/2)
             median_list.append(sublist[mid_index])
-        print(median_list)
+        # print(median_list)
+        # print(image_rgb)
+        # image_rgb[image_rgb == [0, 0, 255]] = [255, 255, 255]
         cv2.imwrite("hist_test4.png", image_rgb)
         if show_images:
             cv2.namedWindow("Input Image", cv2.WINDOW_NORMAL)
